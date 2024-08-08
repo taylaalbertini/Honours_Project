@@ -1,0 +1,7 @@
+"0","mergedCounts_lung_m <- dplyr::left_join(SRR3192467,SRR3192468, by=""ensembl"") %>%"
+"0","  dplyr::left_join(.,SRR3192497, by=""ensembl"") %>%"
+"0","  dplyr::left_join(.,SRR3192498, by=""ensembl"") "
+"0",""
+"0","# remove rows with all zeros"
+"0","mergedCounts_lung_m <- mergedCounts_lung_m[rowSums(mergedCounts_lung_m[,-1])>0,]"
+"0","rownames(mergedCounts_lung_m) <- NULL"

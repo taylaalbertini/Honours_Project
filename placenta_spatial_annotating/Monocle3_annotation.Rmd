@@ -1,0 +1,220 @@
+---
+title: "Monocle3"
+output: html_notebook
+date: "2024-08-05"
+---
+
+# load libraries and set data directory
+```{r}
+library(Seurat)
+library(SeuratObject)
+library(ggplot2)
+library(tidyverse)
+```
+
+# make Seurat object
+```{r}
+# set data directory
+data_dir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/outs"
+
+# check data is there
+list.files(data_dir) # Should show filtered_feature_bc_matrix.h5
+
+# seu for Seurat
+seu <- Load10X_Spatial(data.dir = data_dir, slice='sample1')
+View(seu)
+View(seu@meta.data)
+
+# View image in Seurat object
+SpatialPlot(seu, pt.size.factor = 1.3, alpha = 1) + 
+  NoLegend() + 
+  ggtitle('my Visium data') + 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+# data QC and violin plot
+```{r}
+## nCount = no of molecules / transcripts
+## nFeature = no of genes
+## MT = mitochondrial
+
+# calculate % MT content per spot
+# capital MT for human data. Lower case mt for mouse
+seu <- PercentageFeatureSet(seu, "^MT-", col.name = "percent_mito")
+
+head(seu) # a new column should now be there called "percent_mito"
+
+# Vln plot QC data
+VlnPlot(seu, features = c("nCount_Spatial", "nFeature_Spatial", "percent_mito"), 
+        pt.size = 0.1, 
+        group.by = 'orig.ident') + NoLegend()
+
+seu # check dimensions of object
+
+## QC Trim objects individually
+# filter data. Change these values based on your data and the violin plots
+seu_fil <- subset(seu, subset = nCount_Spatial > 800 & 
+                    nFeature_Spatial > 500 & 
+                    percent_mito < 10)
+
+# Vln again after filtering
+VlnPlot(seu_fil, features = c("nCount_Spatial", "nFeature_Spatial", "percent_mito"), 
+        pt.size = 0.1, 
+        group.by = 'orig.ident') + NoLegend()
+
+## see where there are high counts in the image 
+SpatialFeaturePlot(seu, features = "nCount_Spatial") +
+  SpatialFeaturePlot(seu_fil, features = "nCount_Spatial") 
+
+seu_fil
+```
+
+# pre-processing using Seurat
+```{r}
+## Seurat Workflow
+seu_fil <- NormalizeData(seu_fil) ## normalise the data
+seu_fil <- FindVariableFeatures(seu_fil) ## find the variable features
+seu_fil <- ScaleData(seu_fil) ## scale the data
+seu_fil <- RunPCA(seu_fil) # run linear dimensional reduction
+seu_fil <- FindNeighbors(seu_fil, dims = 1:30) # find neighbours in order to cluster data 
+seu_fil <- FindClusters(seu_fil, resolution = 0.9)  # need to use optimal resolution to cluster data so that transitioning cells or similar cells are not clumped together
+seu_fil <- RunUMAP(seu_fil, dims = 1:30, n.neighbors = 50)
+
+# visualise the data
+DimPlot(seu_fil, reduction = "umap", group.by = "seurat_clusters", label = T)
+
+# check whether resolution used to process data was optimal 
+## use clusters 0, 1 and 4 to make a new dim plot
+cells <- CellsByIdentities(seu_fil, idents = c(2, 3, 4))
+SpatialDimPlot(seu_fil, cells.highlight = cells[setdiff(names(cells), "NA")], # check spatially where the clusters are (what tissue)
+               cols.highlight = c("yellow", "grey50"),
+               facet.highlight = T, combine = T)
+## can use the spatial feature plot function to look at the spatial expression of a specific gene
+SpatialFeaturePlot(seu_fil, features = "ACTG2")
+## visualise myometrium, decidua and placenta cell gene markers in the cluster
+FeaturePlot(object = seu_fil, 
+            features = c("DES", "PRL", "CGA"), label = T, raster = FALSE)
+
+SpatialFeaturePlot(seu_fil, features = "CYP19A1") + # gene marker for syncytiotrophoblasts (SCTs)
+  SpatialFeaturePlot(seu_fil, features = "ERVW-1") # gene marker for villous cytotrophobasts (VCTs) + SCTs
+
+SpatialFeaturePlot(seu_fil, features = "MME") + # gene symbol for fetal placenta SCT and VCT cells from GSEA database
+SpatialFeaturePlot(seu_fil, features = "STAB2") # gene symbol for fetal placenta EVT cells from GSEA database
+```
+
+# identify marker genes
+```{r}
+# identify marker genes
+markers <- FindAllMarkers(seu_fil, assay = "Spatial", only.pos = TRUE) 
+# subset for the top marker genes for each cluster
+markers %>%
+  group_by(cluster) %>%
+  dplyr::filter(avg_log2FC > 1) %>%
+  slice_head(n = 5) %>%
+  ungroup() -> top5
+```
+
+# load known marker GSEA files 
+```{r}
+library(rjson)
+# EVT cell GSEA data
+evt_data <- fromJSON(file = file.path("/Users/taylaalbertini/Desktop/GSEA_data/DESCARTES_FETAL_PLACENTA_EXTRAVILLOUS_TROPHOBLASTS.v2023.2.Hs.json"))
+
+# Lymphoid cells
+lymphoid_data <- fromJSON(file = file.path("/Users/taylaalbertini/Desktop/GSEA_data/DESCARTES_FETAL_PLACENTA_LYMPHOID_CELLS.v2023.2.Hs.json"))
+
+# Myeloid cells
+myeloid_data <- fromJSON(file = file.path("/Users/taylaalbertini/Desktop/GSEA_data/DESCARTES_FETAL_PLACENTA_MYELOID_CELLS.v2023.2.Hs.json"))
+
+# Smooth muscle cells
+smuscle_data <- fromJSON(file = file.path("/Users/taylaalbertini/Desktop/GSEA_data/DESCARTES_FETAL_PLACENTA_SMOOTH_MUSCLE_CELLS.v2023.2.Hs.json"))
+
+# Stromal cells
+stromal_data <- fromJSON(file = file.path("/Users/taylaalbertini/Desktop/GSEA_data/DESCARTES_FETAL_PLACENTA_STROMAL_CELLS.v2023.2.Hs.json"))
+
+# SCT and VCT cells 
+sct_vct_data <- fromJSON(file = file.path("/Users/taylaalbertini/Desktop/GSEA_data/DESCARTES_FETAL_PLACENTA_SYNCYTIOTROPHOBLASTS_AND_VILLOUS_CYTOTROPHOBLASTS.v2023.2.Hs.json"))
+
+# Trophoblast giant cells 
+trophoblast_giant_data <- fromJSON(file = file.path("/Users/taylaalbertini/Desktop/GSEA_data/DESCARTES_FETAL_PLACENTA_TROPHOBLAST_GIANT_CELLS.v2023.2.Hs.json"))
+
+# Vascular endothelial cells
+vendothelial_data <- fromJSON(file = file.path("/Users/taylaalbertini/Desktop/GSEA_data/DESCARTES_FETAL_PLACENTA_VASCULAR_ENDOTHELIAL_CELLS.v2023.2.Hs.json"))
+
+# Fetal SCT and VCT cells
+fetal_sct_vct_data <- fromJSON(file = file.path("/Users/taylaalbertini/Desktop/GSEA_data/DESCARTES_MAIN_FETAL_SYNCYTIOTROPHOBLASTS_AND_VILLOUS_CYTOTROPHOBLASTS.v2023.2.Hs.json"))
+```
+
+# make geneSymbol lists
+```{r}
+evt <- evt_data$DESCARTES_FETAL_PLACENTA_EXTRAVILLOUS_TROPHOBLASTS$geneSymbols
+lymphoid <- lymphoid_data$DESCARTES_FETAL_PLACENTA_LYMPHOID_CELLS$geneSymbols
+myeloid <- myeloid_data$DESCARTES_FETAL_PLACENTA_MYELOID_CELLS$geneSymbols
+smuscle <- smuscle_data$DESCARTES_FETAL_PLACENTA_SMOOTH_MUSCLE_CELLS$geneSymbols
+stromal <- stromal_data$DESCARTES_FETAL_PLACENTA_STROMAL_CELLS$geneSymbols
+sct_vct <- sct_vct_data$DESCARTES_FETAL_PLACENTA_SYNCYTIOTROPHOBLASTS_AND_VILLOUS_CYTOTROPHOBLASTS$geneSymbols
+trophoblast_giant <- trophoblast_giant_data$DESCARTES_FETAL_PLACENTA_TROPHOBLAST_GIANT_CELLS$geneSymbols
+vendothelial <- vendothelial_data$DESCARTES_FETAL_PLACENTA_VASCULAR_ENDOTHELIAL_CELLS$geneSymbols
+fetal_sct_vct <- fetal_sct_vct_data$DESCARTES_MAIN_FETAL_SYNCYTIOTROPHOBLASTS_AND_VILLOUS_CYTOTROPHOBLASTS$geneSymbols
+```
+
+# Compare gene markers to known gene markers
+```{r}
+known_markers <- data.frame(
+  cell_type = c("EVT cell","Lymphoid cell", "Myeloid cell", "Smooth Muscle cell", "Stromal cell", "SCT and VCT cells", "Trophoblast Giant cell", "Vascular Endothelial cell", "Fetal SCT and VCT cells"),
+  marker_genes = I(list(
+    evt, # EVT markers
+    lymphoid, # Lymphoid cell markers
+    myeloid, # Myeloid cell markers
+    smuscle, # Smooth Muscle cell markers
+    stromal, # Stromal cell markers
+    sct_vct, # SCT and VCT cell markers
+    trophoblast_giant, # Trophoblast Giant cell markers
+    vendothelial, # Vascular Endothelial cell markers 
+    fetal_sct_vct # Fetal SCT and VCT cell markers 
+  ))
+)
+print(known_markers)
+
+# Function to match clusters to known cell types using a list of gene symbols
+annotate_clusters <- function(markers, known_markers) {
+  cluster_annotations <- list()
+  for (cluster in unique(markers$cluster)) {
+    cluster_genes <- markers %>% filter(cluster == !!cluster) %>% pull(gene)
+    matched_cell_types <- list()
+    for (i in 1:nrow(known_markers)) {
+      if (any(cluster_genes %in% known_markers$marker_genes[[i]])) {
+        matched_cell_types <- c(matched_cell_types, known_markers$cell_type[i])
+      }
+    }
+    cluster_annotations[[as.character(cluster)]] <- unique(matched_cell_types)
+  }
+  return(cluster_annotations)
+}
+
+# annotate clusters
+cluster_annotations <- annotate_clusters(top10, known_markers)
+
+# print annotations
+print(cluster_annotations)
+```
+
+# annotate Seurat Object based on the cluster annotations
+```{r}
+# create names vector of cluster annotations
+cluster_labels <- sapply(cluster_annotations, function(x) paste(unique(x), collapse = ", "))
+print(cluster_labels)
+
+# add c;uster labels to Seurat object
+seu_fil$cell_type <- seu_fil$seurat_clusters %>%
+  as.character() %>%
+  map_chr(~ cluster_labels[.])
+print(seu_fil@meta.data$cell_type)
+
+# Visualize the annotations
+DimPlot(seu_fil, reduction = "umap", group.by = "cell_type")
+
+SpatialDimPlot(seu_fil, group.by = "cell_type")
+```
+
+

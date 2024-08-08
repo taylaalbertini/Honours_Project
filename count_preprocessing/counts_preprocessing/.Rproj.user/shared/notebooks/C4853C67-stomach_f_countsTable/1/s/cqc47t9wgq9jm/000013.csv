@@ -1,0 +1,1 @@
+"0","countsTable_stomach_f <- mergedCounts_stomach_f[,-(4:6)]"

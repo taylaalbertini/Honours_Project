@@ -1,0 +1,150 @@
+---
+title: "heart_m"
+output: html_document
+date: "2024-05-01"
+---
+
+# load libraries and set project directory 
+```{r}
+# load the relevant libraries
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData"
+
+# set path for counts tables 
+import_ERR2704712 <- file.path(projDir, "heart_m/ERR2704712__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2704714 <- file.path(projDir, "heart_m/ERR2704714__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2704715 <- file.path(projDir, "heart_m/ERR2704715__GRCh38_ReadsPerGene_counts.tab")
+import_SRR12503572 <- file.path(projDir, "heart_m/SRR12503572__GRCh38_ReadsPerGene_counts.tab")
+import_SRR12503573 <- file.path(projDir, "heart_m/SRR12503573__GRCh38_ReadsPerGene_counts.tab")
+import_SRR16145841 <- file.path(projDir, "heart_m/SRR16145841__GRCh38_ReadsPerGene_counts.tab")
+```
+
+# import the raw readCounts
+```{r}
+# import the counts tables
+## ERR2704712
+ERR2704712 <- read_delim(file = import_ERR2704712,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2704712=X2)
+
+## ERR2704714
+ERR2704714 <- read_delim(file = import_ERR2704714,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2704714=X2)
+
+## ERR2704715
+ERR2704715 <- read_delim(file = import_ERR2704715,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2704715=X2)
+
+## SRR12503572
+SRR12503572 <- read_delim(file = import_SRR12503572,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR12503572=X2)
+
+## SRR12503573
+SRR12503573 <- read_delim(file = import_SRR12503573,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR12503573=X2)
+
+## SRR16145841
+SRR16145841 <- read_delim(file = import_SRR16145841,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR16145841=X2)
+```
+
+# stitch samples together
+```{r}
+# join samples together 
+## left joins the sample column by the 'ensembl' column
+mergedCounts_heart_m <- dplyr::left_join(ERR2704712,ERR2704714, by="ensembl") %>%
+  dplyr::left_join(.,ERR2704715, by="ensembl") %>%
+  dplyr::left_join(.,SRR12503572, by="ensembl") %>%
+  dplyr::left_join(.,SRR12503573, by="ensembl") %>%
+  dplyr::left_join(.,SRR16145841, by="ensembl")
+
+# remove rows with all zeros
+mergedCounts_heart_m <- mergedCounts_heart_m[rowSums(mergedCounts_heart_m[,-1])>0,]
+
+# convert 'ensembl' column to row names 
+## ensure there are no row names first
+rownames(mergedCounts_heart_m) <- NULL
+mergedCounts_heart_m %<>% tibble::column_to_rownames("ensembl")
+```
+
+# library size scatter plot
+```{r}
+# create a small data frame with information for the plot
+plotCounts_heart_m <- mergedCounts_heart_m %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_heart_m,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts male heart") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in male heart",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# output file
+```{r}
+write.csv(mergedCounts_heart_m, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/combined_raw/rawCounts_heart_m.csv"))
+```
+
+
+

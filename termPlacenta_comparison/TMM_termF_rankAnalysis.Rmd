@@ -1,0 +1,169 @@
+---
+title: "TMM_termF_rankAnalysis"
+output: html_document
+date: "2024-06-05"
+---
+
+# load libraries
+```{r}
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set project directory
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/termPlacenta_comparison/rawData"
+import_mean_female_cpms_TMM <- file.path(projectDir, "mean_female_cpms_termC_TMM.csv")
+```
+
+# import files
+```{r}
+# import mean female cpms table
+mean_female_cpms_TMM <- read_delim(file = import_mean_female_cpms_TMM,
+                                   col_names = TRUE,
+                                   delim = ",")
+
+# remove the first column - "...1"
+mean_female_cpms_TMM <- mean_female_cpms_TMM[,-1]
+
+# copy mean_cpms for subsequent analysis 
+mean_female_cpms_TMM_cp <- as.data.frame(mean_female_cpms_TMM)
+```
+
+# ranking normalised cpms by female_tissue
+```{r}
+# make calc_rank a function
+calculate_rank <- function(x) {
+  return(rank(-x))
+}
+
+# rank normalised cpms by female_tissue
+mean_female_cpms_TMM[, paste0(names(mean_female_cpms_TMM)[-1], "_Rank")] <- apply(mean_female_cpms_TMM [, -1, drop = FALSE], 2, calculate_rank)
+
+## convert sex_tissue into row names
+mean_female_cpms_TMM <- tibble::column_to_rownames(mean_female_cpms_TMM, var = "sex_tissue")
+# create a df selecting just for _Rank
+ranked_female_cpms_TMM <- data.frame(mean_female_cpms_TMM) %>%
+  dplyr::select(matches("_Rank"))
+```
+
+# isolate all instances where early placenta is ranked 2nd
+```{r}
+# creating the rank table
+  ## create a dataframe with geneid in rows and samples in columns
+ranked_female_TMM <- t(ranked_female_cpms_TMM) %>%
+  data.frame() %>%
+   ## change gene ensembls from being row names to its own column, matching the format of rankComparison_female_TMM
+  tibble::rownames_to_column("geneid")  
+  
+  ### remove "_Rank" from the end of the geneids
+  ranked_female_TMM <- tidyr::separate(
+  ranked_female_TMM,
+  col = geneid,
+  into = c("geneid", "right"),
+  sep = "_Rank") %>%
+  mutate(geneid = str_remove(geneid, "_Rank")) %>%
+  dplyr::select(-right)
+  
+  # rename to sex_tissue_rank
+  colnames(ranked_female_TMM) <- gsub("female_placenta_mid", "female_placenta_mid_rank", colnames(ranked_female_TMM))
+  colnames(ranked_female_TMM) <- gsub("female_placenta_term", "female_placenta_term_rank", colnames(ranked_female_TMM))
+  
+# create the nCPMs table in the same format as rank table so they can be joined
+## transpose the data frame, flips rows and columns (rows become columns and columns become rows)
+nCPMs_female_TMM <- data.frame(mean_female_cpms_TMM_cp) %>%
+  tibble::column_to_rownames(., var = "sex_tissue") %>%
+  t() %>%
+  data.frame() %>%
+   ## change gene ensembls from being row names to its own column, matching the format of rankComparison_female_TMM
+  tibble::rownames_to_column("geneid")
+
+   # rename to sex_tissue_cpm
+ colnames(nCPMs_female_TMM) <- gsub("female_placenta_mid", "female_placenta_mid_cpm", colnames(nCPMs_female_TMM))
+  colnames(nCPMs_female_TMM) <- gsub("female_placenta_term", "female_placenta_term_cpm", colnames(nCPMs_female_TMM))
+
+# combine via left_join nCPMs_female_TMM and ranked_female_TMM
+nCPMs_rank_female <- dplyr::left_join(ranked_female_TMM, nCPMs_female_TMM, copy = TRUE, by = join_by(geneid))
+  
+# select for when placenta_rank = 2
+placenta_female_2_TMM <- subset(nCPMs_rank_female, female_placenta_term_rank == "2")
+```
+
+# nCPM > 1 for tissue rank 1 and convert tables into one long form table
+```{r}
+# filter for where rank = 1 and cpm > 1
+nCPM_rank_1_TMM <- dplyr::filter(placenta_female_2_TMM, female_placenta_mid_rank == "1" & female_placenta_mid_cpm > 1)
+
+# separate _cpm  and _rank into its own table again
+## separate cpm into its own table
+nCPM_1_TMM <- tibble::column_to_rownames(nCPM_rank_1_TMM, var = "geneid") %>%
+ data.frame() %>%
+  dplyr::select(matches("_cpm"))
+## separate rank into its own table
+rank_1_TMM <- tibble::column_to_rownames(nCPM_rank_1_TMM, var = "geneid") %>%
+ data.frame() %>%
+  dplyr::select(matches("_rank"))
+
+# convert cpm_1_TMM into long form
+## convert rows into a column
+nCPM_1_TMM_long <- tibble::rownames_to_column(nCPM_1_TMM, var = "geneid")
+## rename, remove "_cpm"
+ names(nCPM_1_TMM_long) <- gsub("_cpm", "", names(nCPM_1_TMM_long))
+  #convert into long form
+nCPM_1_TMM_long <- tidyr::gather(nCPM_1_TMM_long, tissue, cpm, female_placenta_mid, female_placenta_term)
+
+# convert rank_1_TMM into long form
+## convert rows into a column
+rank_1_TMM_long <- tibble::rownames_to_column(rank_1_TMM, var = "geneid")
+## rename, remove "_cpm"
+ names(rank_1_TMM_long) <- gsub("_rank", "", names(rank_1_TMM_long))
+  #convert into long form
+rank_1_TMM_long <- tidyr::gather(rank_1_TMM_long, tissue, rank, female_placenta_mid, female_placenta_term)
+rank_1_TMM_long_2 <- dplyr::filter(rank_1_TMM_long, rank == "1")
+
+# join the long form tables - nCPM_1_TMM_long and rank_5_TMM
+nCPM_rank_1_TMM_long <- dplyr::left_join(rank_1_TMM_long_2, nCPM_1_TMM_long, by = c("geneid", "tissue"))
+## rename cpm to nCPM_5
+  colnames(nCPM_rank_1_TMM_long) <- gsub("cpm", "nCPM_1", colnames(nCPM_rank_1_TMM_long))
+```
+
+#  nCPM(rank=1)/nCPM(rank=2) > 3
+```{r}
+# create a long df of just placenta_rank == 2  with ensembl IDs and cpms
+## create a long df with just the instances where placenta = 2
+rank_placenta_long <- filter(rank_1_TMM_long, rank == "2")
+## join nCPM_5_TMM_long to rank_placenta_long to create placenta rank 6 cpms table
+placenta_2_nCPM <- dplyr::left_join(rank_placenta_long, nCPM_1_TMM_long, by = c("geneid", "tissue"))
+  ### rename so they are unique
+  colnames(placenta_2_nCPM) <- gsub("cpm", "nCPM_2", colnames(placenta_2_nCPM))
+  ### remove rank and tissue columns
+  placenta_2_nCPM <- dplyr::select(placenta_2_nCPM, -tissue, -rank)
+  
+# join placenta_2_nCPM and nCPM_rank_1_TMM_long creating a df with both the nCPMs of rank 1 and 2
+  nCPM1_nCPM2_TMM_female <- dplyr::left_join(nCPM_rank_1_TMM_long, placenta_2_nCPM, by = "geneid")
+
+# create a new column nCPM5/nCPM6
+nCPM1_nCPM2_TMM_female$nCPM_ratio <- nCPM1_nCPM2_TMM_female$nCPM_1 / nCPM1_nCPM2_TMM_female$nCPM_2
+
+# select for nCPM_ratio > 3
+placenta_f_depleted_TMM <- nCPM1_nCPM2_TMM_female[nCPM1_nCPM2_TMM_female$nCPM_ratio >3,]
+```
+
+# tidy placenta_f_depleted_TMM table
+```{r}
+# replace gneeid with ensembl
+colnames(placenta_f_depleted_TMM) <- gsub("geneid", "ensembl", colnames(placenta_f_depleted_TMM))
+```
+
+# export placenta_f_depleted_TMM
+```{r}
+write.csv(placenta_f_depleted_TMM, file = file.path(projectDir, "TMM_placentaF_term_depleted.csv"))
+```

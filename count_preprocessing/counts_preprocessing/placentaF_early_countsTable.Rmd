@@ -1,0 +1,283 @@
+---
+title: "placentaF_early_countsTable"
+output: html_document
+date: "2024-05-15"
+---
+
+# load libraries and set project directory
+```{r}
+# load the relevant libraries 
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData/placenta_f"
+
+# set path for counts tables 
+import_PAC006 <- file.path(projDir, "PAC006_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC008 <- file.path(projDir, "PAC008_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC010 <- file.path(projDir, "PAC010_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC012 <- file.path(projDir, "PAC012_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC_0193 <- file.path(projDir, "PAC_0193_T_S1__GRCh38_ReadsPerGene_counts.tab")
+import_PAC_0200 <- file.path(projDir, "PAC_0200_T_S80__GRCh38_ReadsPerGene_counts.tab")
+import_PAC_0208 <- file.path(projDir, "PAC_0208_T_S31__GRCh38_ReadsPerGene_counts.tab")
+import_PAC_0214 <- file.path(projDir, "PAC_0214_T_S55__GRCh38_ReadsPerGene_counts.tab")
+import_PAC_0219 <- file.path(projDir, "PAC_0219_T_S49__GRCh38_ReadsPerGene_counts.tab")
+import_PAC024 <- file.path(projDir, "PAC024_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC034 <- file.path(projDir, "PAC034_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC035 <- file.path(projDir, "PAC035_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC036 <- file.path(projDir, "PAC036_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC037 <- file.path(projDir, "PAC037_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC038 <- file.path(projDir, "PAC038_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC039 <- file.path(projDir, "PAC039_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC046 <- file.path(projDir, "PAC046_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC051 <- file.path(projDir, "PAC051_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC055 <- file.path(projDir, "PAC055_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC056 <- file.path(projDir, "PAC056_RNA__GRCh38_ReadsPerGene_counts.tab")
+import_PAC064 <- file.path(projDir, "PAC064_RNA__GRCh38_ReadsPerGene_counts.tab")
+```
+
+# import raw readCounts
+```{r}
+# import the count tables 
+## PAC006
+PAC006 <- read_delim(file = import_PAC006,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC006=X2)
+
+## PAC008
+PAC008 <- read_delim(file = import_PAC008,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC008=X2)
+
+## PAC010
+PAC010 <- read_delim(file = import_PAC010,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC010=X2)
+
+## PAC012
+PAC012 <- read_delim(file = import_PAC012,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC012=X2)
+
+## PAC0193
+PAC0193 <- read_delim(file = import_PAC_0193,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC0193=X2)
+
+## PAC0200
+PAC0200 <- read_delim(file = import_PAC_0200,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC0200=X2)
+
+## PAC0208
+PAC0208 <- read_delim(file = import_PAC_0208,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC0208=X2)
+
+## PAC0214
+PAC0214 <- read_delim(file = import_PAC_0214,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC0214=X2)
+
+## PAC0219
+PAC0219 <- read_delim(file = import_PAC_0219,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC0219=X2)
+
+## PAC024
+PAC024 <- read_delim(file = import_PAC024,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC024=X2)
+
+## PAC034
+PAC034 <- read_delim(file = import_PAC034,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC034=X2)
+
+## PAC035
+PAC035 <- read_delim(file = import_PAC035,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC035=X2)
+
+## PAC036
+PAC036 <- read_delim(file = import_PAC036,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC036=X2)
+
+## PAC037
+PAC037 <- read_delim(file = import_PAC037,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC037=X2)
+
+## PAC038
+PAC038 <- read_delim(file = import_PAC038,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC038=X2)
+
+## PAC039
+PAC039 <- read_delim(file = import_PAC039,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC039=X2)
+
+## PAC046
+PAC046 <- read_delim(file = import_PAC046,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC046=X2)
+
+## PAC051
+PAC051 <- read_delim(file = import_PAC051,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC051=X2)
+
+## PAC055
+PAC055 <- read_delim(file = import_PAC055,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC055=X2)
+
+## PAC056
+PAC056 <- read_delim(file = import_PAC056,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC056=X2)
+
+## PAC064
+PAC064 <- read_delim(file = import_PAC064,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,PAC064=X2)
+```
+
+# stitch samples together
+```{r}
+# join the samples together into one table
+## left joins the sample column by the 'ensembl' column
+mergedCounts_placentaF_early <- dplyr::left_join(PAC006,PAC008, by="ensembl") %>%
+  dplyr::left_join(.,PAC010, by="ensembl") %>%
+  dplyr::left_join(.,PAC012, by="ensembl") %>%
+  dplyr::left_join(.,PAC0193, by="ensembl") %>%
+  dplyr::left_join(.,PAC0200, by="ensembl") %>%
+  dplyr::left_join(.,PAC0208, by="ensembl") %>%
+  dplyr::left_join(.,PAC0214, by="ensembl") %>%
+  dplyr::left_join(.,PAC0219, by="ensembl") %>%
+  dplyr::left_join(.,PAC024, by="ensembl") %>%
+  dplyr::left_join(.,PAC034, by="ensembl") %>%
+  dplyr::left_join(.,PAC035, by="ensembl") %>%
+  dplyr::left_join(.,PAC036, by="ensembl") %>%
+  dplyr::left_join(.,PAC037, by="ensembl") %>%
+  dplyr::left_join(.,PAC038, by="ensembl") %>%
+  dplyr::left_join(.,PAC039, by="ensembl") %>%
+  dplyr::left_join(.,PAC046, by="ensembl") %>% 
+  dplyr::left_join(.,PAC051, by="ensembl") %>%
+  dplyr::left_join(.,PAC055, by="ensembl") %>%
+  dplyr::left_join(.,PAC056, by="ensembl") %>%
+  dplyr::left_join(.,PAC064, by="ensembl") 
+
+# remove rows with all zeros
+mergedCounts_placentaF_early <- mergedCounts_placentaF_early[rowSums(mergedCounts_placentaF_early[,-1])>0,]
+
+# convert 'ensembl' column to row names 
+## ensure there are no row names first
+rownames(mergedCounts_placentaF_early) <- NULL
+mergedCounts_placentaF_early %<>% tibble::column_to_rownames("ensembl")
+```
+
+# library scatter plot
+```{r}
+# create a small data frame with information for the plot
+plotCounts_placentaF_early <- mergedCounts_placentaF_early %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_placentaF_early,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts female early-gestation placenta") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in female early-gestation placenta",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# output file
+```{r}
+write.csv(mergedCounts_placentaF_early, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/oxygen_threshold/rawData/rawCounts_placentaF_early.csv"))
+```
+

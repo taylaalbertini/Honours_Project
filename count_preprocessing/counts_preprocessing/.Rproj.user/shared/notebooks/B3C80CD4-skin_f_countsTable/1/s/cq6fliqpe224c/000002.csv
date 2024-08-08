@@ -1,0 +1,69 @@
+"0","# import the counts tables"
+"0","## SRR2156554"
+"0","SRR2156554 <- read_delim(file = import_SRR2156554,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,SRR2156554=X2)"
+"1","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m───────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","## SRR3191764"
+"0","SRR3191764 <- read_delim(file = import_SRR3191764,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,SRR3191764=X2)"
+"1","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m───────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","## SRR3192447"
+"0","SRR3192447 <- read_delim(file = import_SRR3192447,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,SRR3192447=X2)"
+"1","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m───────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","## SRR4421409"
+"0","SRR4421409 <- read_delim(file = import_SRR4421409,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,SRR4421409=X2)"
+"1","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m───────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"

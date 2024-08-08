@@ -1,0 +1,9 @@
+"0","dge_object <- edgeR::DGEList(
+  counts = rawCounts_protein,
+  samples = metaData,
+  group = metaData$tissue,
+  genes = rownames(rawCounts_protein))
+"
+"2","Error in DGEList.default(counts = rawCounts_protein, samples = metaData,  : 
+  Number of rows in 'samples' must equal number of columns in 'counts'
+"

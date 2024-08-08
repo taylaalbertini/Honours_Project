@@ -1,0 +1,4 @@
+"0","mergedCounts_skin_m %<>% tidyr::separate(., col = ensembl, into = c(""ensembl"", ""right"")) %>%"
+"0","  dplyr::select(., -right) %>%"
+"0","  distinct(ensembl, .keep_all = TRUE) %>%"
+"0","  tibble::column_to_rownames(""ensembl"")"

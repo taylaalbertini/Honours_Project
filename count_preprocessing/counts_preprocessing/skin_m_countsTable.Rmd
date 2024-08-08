@@ -1,0 +1,124 @@
+---
+title: "skin_m"
+output: html_document
+date: "2024-05-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# load libraries
+```{r}
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData"
+import_SRR3191763 <- file.path(projDir, "skin_m/SRR3191763__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3192448 <- file.path(projDir, "skin_m/SRR3192448__GRCh38_ReadsPerGene_counts.tab")
+import_SRR4421408 <- file.path(projDir, "skin_m/SRR4421408__GRCh38_ReadsPerGene_counts.tab")
+```
+
+# import read counts
+```{r}
+# import the counts tables
+## SRR3191763
+SRR3191763 <- read_delim(file = import_SRR3191763,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3191763=X2)
+
+## SRR3192448
+SRR3192448 <- read_delim(file = import_SRR3192448,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3192448=X2)
+
+## SRR4421408
+SRR4421408 <- read_delim(file = import_SRR4421408,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR4421408=X2)
+```
+
+# stitch samples together
+```{r}
+mergedCounts_skin_m <- dplyr::left_join(SRR3191763,SRR3192448, by="ensembl") %>%
+  dplyr::left_join(.,SRR4421408, by="ensembl") 
+
+# remove rows with all zeros
+mergedCounts_skin_m <- mergedCounts_skin_m[rowSums(mergedCounts_skin_m[,-1])>0,]
+rownames(mergedCounts_skin_m) <- NULL
+```
+
+# remove the number after the period and convert ensembl to row nammes
+```{r}
+mergedCounts_skin_m %<>% tidyr::separate(., col = ensembl, into = c("ensembl", "right")) %>%
+  dplyr::select(., -right) %>%
+  distinct(ensembl, .keep_all = TRUE) %>%
+  tibble::column_to_rownames("ensembl")
+```
+
+# library size scatter plot
+```{r}
+# create a small data frame with information for the plot
+plotCounts_skin_m <- mergedCounts_skin_m %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_skin_m,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts skin male - all samples\n(hg38)") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in skin male",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# output file
+```{r}
+write.csv(mergedCounts_skin_m, file = file.path(projDir,
+                                                 "combined_raw/rawCounts_skin_m.csv"))
+```

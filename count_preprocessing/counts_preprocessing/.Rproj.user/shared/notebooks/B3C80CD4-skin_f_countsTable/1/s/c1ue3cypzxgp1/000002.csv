@@ -1,0 +1,7 @@
+"0","mergedCounts_skin_f <- dplyr::left_join(SRR2156554,SRR3191764, by=""ensembl"") %>%"
+"0","  dplyr::left_join(.,SRR3192447, by=""ensembl"") %>%"
+"0","  dplyr::left_join(.,SRR4421409, by=""ensembl"") "
+"0",""
+"0","# remove rows with all zeros"
+"0","mergedCounts_skin_f <- mergedCounts_skin_f[rowSums(mergedCounts_skin_f[,-1])>0,]"
+"0","rownames(mergedCounts_skin_f) <- NULL"

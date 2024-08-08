@@ -1,0 +1,15 @@
+"0","write.csv(mean_placenta_cpms,file = file.path(""/Users/taylaalbertini/Desktop/R studio/honours_project/sexSpecific_comparison/rawData""))
+"
+"2","Warning in file(file, ifelse(append, ""a"", ""w"")) :"
+"2","
+ "
+"2"," 'raw = FALSE' but '/Users/taylaalbertini/Desktop/R studio/honours_project/sexSpecific_comparison/rawData' is not a regular file
+"
+"2","Warning in file(file, ifelse(append, ""a"", ""w"")) :"
+"2","
+ "
+"2"," cannot open file '/Users/taylaalbertini/Desktop/R studio/honours_project/sexSpecific_comparison/rawData': Is a directory
+"
+"2","Error in file(file, ifelse(append, ""a"", ""w"")) : 
+  cannot open the connection
+"

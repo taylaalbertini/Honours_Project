@@ -1,0 +1,76 @@
+"0","library(plyr)"
+"0","library(reshape2)"
+"0","library(dplyr)"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise, summarize
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","library(stringr)"
+"0","library(readxl)"
+"0","library(readr)"
+"0","library(magrittr)"
+"0","library(ggplot2)"
+"2","Learn more about the underlying theory at https://ggplot2-book.org/
+"
+"0","library(edgeR)"
+"2","Loading required package: limma
+"
+"0","library(limma)"
+"0","library(Glimma)"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
+"
+"0","library(RColorBrewer)"
+"0",""
+"0","# set up project directory "
+"0","projDir <- ""/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData"""
+"0","import_PAC_0101 <- file.path(projDir, ""placenta_f/PAC_0101_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0110 <- file.path(projDir, ""placenta_f/PAC_0110_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0113 <- file.path(projDir, ""placenta_f/PAC_0113_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0121 <- file.path(projDir, ""placenta_f/PAC_0121_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0126 <- file.path(projDir, ""placenta_f/PAC_0126_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0135 <- file.path(projDir, ""placenta_f/PAC_0135_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC017 <- file.path(projDir, ""placenta_f/PAC017_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0183 <- file.path(projDir, ""placenta_f/PAC_0183_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0191 <- file.path(projDir, ""placenta_f/PAC_0191_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0196 <- file.path(projDir, ""placenta_f/PAC_0196_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0203 <- file.path(projDir, ""placenta_f/PAC_0203_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0211 <- file.path(projDir, ""placenta_f/PAC_0211_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC_0222 <- file.path(projDir, ""placenta_f/PAC_0222_T_S27__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC027 <- file.path(projDir, ""placenta_f/PAC027_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC033 <- file.path(projDir, ""placenta_f/PAC033_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC053 <- file.path(projDir, ""placenta_f/PAC053_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC058 <- file.path(projDir, ""placenta_f/PAC058_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC059 <- file.path(projDir, ""placenta_f/PAC059_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC071 <- file.path(projDir, ""placenta_f/PAC071_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC074 <- file.path(projDir, ""placenta_f/PAC074_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC078 <- file.path(projDir, ""placenta_f/PAC078_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC084 <- file.path(projDir, ""placenta_f/PAC084_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC097 <- file.path(projDir, ""placenta_f/PAC097_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC099 <- file.path(projDir, ""placenta_f/PAC099_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC100 <- file.path(projDir, ""placenta_f/PAC100_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC102 <- file.path(projDir, ""placenta_f/PAC102_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC105 <- file.path(projDir, ""placenta_f/PAC105_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC109 <- file.path(projDir, ""placenta_f/PAC109_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC111 <- file.path(projDir, ""placenta_f/PAC111_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC118 <- file.path(projDir, ""placenta_f/PAC118_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC124 <- file.path(projDir, ""placenta_f/PAC124_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC131 <- file.path(projDir, ""placenta_f/PAC131_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","import_PAC134 <- file.path(projDir, ""placenta_f/PAC134_RNA__GRCh38_ReadsPerGene_counts.tab"")"
+"0","mport_PAC140 <- file.path(projDir, ""placenta_f/PAC140_RNA__GRCh38_ReadsPerGene_counts.tab"")"

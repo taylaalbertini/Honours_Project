@@ -1,0 +1,4 @@
+"0","mergedCounts_stomach_f %<>% tidyr::separate(., col = ensembl, into = c(""ensembl"", ""right"")) %>%"
+"0","  dplyr::select(., -right) %>%"
+"0","  distinct(ensembl, .keep_all = TRUE) %>%"
+"0","  tibble::column_to_rownames(""ensembl"")"

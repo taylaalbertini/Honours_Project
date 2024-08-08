@@ -1,0 +1,43 @@
+"0","# TMM_depletedM"
+"0","TMM_depletedM <- read_delim(file = import_TMM_depletedM,"
+"0","                            col_names = TRUE,"
+"0","                            delim = "","") %>%"
+"0","  as.data.frame()"
+"1","[1m[22mNew names:
+[36m•[39m `` -> `...1`
+"
+"1","[1mRows: [22m[34m472[39m [1mColumns: [22m[34m7[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (2): ensembl, tissue
+[32mdbl[39m (5): ...1, rank, nCPM_1, nCPM_2, nCPM_ratio
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","  ## tidy df - remove the ""..1"" column"
+"0","  TMM_depletedM <- TMM_depletedM[,-1]"
+"0",""
+"0","# DESq_depletedM"
+"0","DESq_depletedM <- read_delim(file = import_DESq_depletedM,"
+"0","                             col_names = TRUE,"
+"0","                             delim = "","") %>%"
+"0","  as.data.frame()"
+"1","[1m[22mNew names:
+[36m•[39m `` -> `...1`
+"
+"1","[1mRows: [22m[34m480[39m [1mColumns: [22m[34m7[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (2): ensembl, tissue
+[32mdbl[39m (5): ...1, rank, nCPM_1, nCPM_2, nCPM_ratio
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","  ## tidy df - remove the ""..1"" column"
+"0","  DESq_depletedM <- DESq_depletedM[,-1]"

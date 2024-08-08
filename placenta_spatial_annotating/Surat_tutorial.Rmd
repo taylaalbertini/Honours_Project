@@ -1,0 +1,22 @@
+---
+title: "Surat_tutorial"
+output: html_document
+date: "2024-07-02"
+---
+
+# load libraries
+```{r}
+BiocManager::install("Seurat")
+library(Seurat)
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+```
+
+# import the relevant files
+```{r}
+
+```
+
+
+

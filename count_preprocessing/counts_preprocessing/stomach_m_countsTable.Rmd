@@ -1,0 +1,124 @@
+---
+title: "stomach_m"
+output: html_document
+date: "2024-05-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# load libraries
+```{r}
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData"
+import_SRR2014231 <- file.path(projDir, "stomach_m/SRR2014231__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3192449 <- file.path(projDir, "stomach_m/SRR3192449__GRCh38_ReadsPerGene_counts.tab")
+import_SRR4421778 <- file.path(projDir, "stomach_m/SRR4421778__GRCh38_ReadsPerGene_counts.tab")
+```
+
+# import read counts
+```{r}
+# import the counts tables
+## SRR2014231
+SRR2014231 <- read_delim(file = import_SRR2014231,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR2014231=X2)
+
+## SRR3192449
+SRR3192449 <- read_delim(file = import_SRR3192449,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3192449=X2)
+
+## SRR4421778
+SRR4421778 <- read_delim(file = import_SRR4421778,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR4421778=X2)
+```
+
+# stitch samples together
+```{r}
+mergedCounts_stomach_m <- dplyr::left_join(SRR2014231,SRR3192449, by="ensembl") %>%
+  dplyr::left_join(.,SRR4421778, by="ensembl") 
+
+# remove rows with all zeros
+mergedCounts_stomach_m <- mergedCounts_stomach_m[rowSums(mergedCounts_stomach_m[,-1])>0,]
+rownames(mergedCounts_stomach_m) <- NULL
+```
+
+# remove the number after the period and convert ensembl to row nammes
+```{r}
+mergedCounts_stomach_m %<>% tidyr::separate(., col = ensembl, into = c("ensembl", "right")) %>%
+  dplyr::select(., -right) %>%
+  distinct(ensembl, .keep_all = TRUE) %>%
+  tibble::column_to_rownames("ensembl")
+```
+
+# library size scatter plot
+```{r}
+# create a small data frame with information for the plot
+plotCounts_stomach_m <- mergedCounts_stomach_m %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_stomach_m,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts stomach male - all samples\n(hg38)") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in stomach male",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# output file
+```{r}
+write.csv(mergedCounts_stomach_m, file = file.path(projDir,
+                                                 "combined_raw/rawCounts_stomach_m.csv"))
+```

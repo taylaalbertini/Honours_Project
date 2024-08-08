@@ -1,0 +1,170 @@
+---
+title: "transcript_plots"
+output: html_document
+date: "2024-07-29"
+---
+
+# load libraries and set project directory 
+```{r}
+# load relevant libraries 
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set project directory
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/tissue_depletion/rawData"
+```
+
+# load data files
+```{r}
+# import female depleted files
+placentaF_depleted <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/rawData/placentaF_depleted.csv"),
+                            col_names = TRUE,
+                            delim = ",") %>%
+  as.data.frame() %>%
+  ## only keep ensembl column for venn diagram plots
+  dplyr::select(., ensembl)
+
+# import male depleted files
+placentaM_depleted <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/rawData/placentaM_depleted.csv"),
+                            col_names = TRUE,
+                            delim = ",") %>%
+  as.data.frame() %>%
+  ## only keep ensembl column for venn diagram plots
+  dplyr::select(., ensembl)
+```
+
+# venn diagram of female and male depleted transcripts from fetal comparison 
+```{r}
+# load VennDiagram
+library(VennDiagram)
+
+# make lists of ensembl ids
+placentaF <- placentaF_depleted$ensembl
+placentaM <- placentaM_depleted$ensembl
+
+merged <- dplyr::inner_join(placentaM_depleted, placentaF_depleted, by = join_by("ensembl"))
+
+# create venn diagram of all female fetal tissue depleted transcripts 
+# move to new ploting page
+grid.newpage() 
+
+venn.diagram(list(
+  "Female" = placentaF, 
+  "Male" = placentaM), 
+filename = "/Users/taylaalbertini/Desktop/venndiagram_f.png", 
+output=TRUE,
+compression = "none",
+width = 3500,
+cex = 1.5)
+```
+
+# venn diagram of early-gestation female and male depleted transcripts 
+```{r}
+# load in data
+earlyF <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/oxygen_threshold/rawData/earlyF_depleted.csv"),
+                     col_names = TRUE,
+                     delim = ",")
+earlyM <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/oxygen_threshold/rawData/earlyM_depleted.csv"),
+                     col_names = TRUE,
+                     delim = ",")
+
+# make vectors of ensembl ids
+earlyF_ensembls <- earlyF$ensembl
+earlyM_ensembls <- earlyM$ensembl
+
+# create venn diagram 
+venn.diagram(list(
+  "Female (early)" = earlyF_ensembls, 
+  "Male (early)" = earlyM_ensembls), 
+filename = "/Users/taylaalbertini/Desktop/early_venndiagram_f.png", 
+output=TRUE,
+compression = "none",
+width = 3500,
+cat.pos = c(-40, 40),
+cex = 1.5)
+?venn.diagram
+```
+
+# venn diagram of mid-gestation female and male depleted transcripts 
+```{r}
+# load in data
+midF <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/oxygen_threshold/rawData/midF_depleted.csv"),
+                     col_names = TRUE,
+                     delim = ",")
+midM <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/oxygen_threshold/rawData/midM_depleted.csv"),
+                     col_names = TRUE,
+                     delim = ",")
+
+# make vectors of ensembl ids
+midF_ensembls <- midF$ensembl
+midM_ensembls <- midM$ensembl
+
+# create venn diagram 
+venn.diagram(list(
+  "Female (mid)" = midF_ensembls, 
+  "Male (mid)" = midM_ensembls), 
+filename = "/Users/taylaalbertini/Desktop/mid_venndiagram_f.png", 
+output=TRUE,
+compression = "none",
+width = 3500,
+cat.pos = c(-40, 40),
+cex = 1.5)
+?venn.diagram
+```
+
+# lollipop plots
+```{r}
+## female depleted transcripts lollipop plots
+## create a data frame with female_tissue and the corresponding no. of depleted transcripts
+female_df <- data.frame(
+  x = c("Female Brain", "Female Heart", "Female Liver", "Female Lung", "Female Muscle", "Female Placenta"),
+  y = c(443, 19, 444, 75, 32, 208)
+) %>% 
+  arrange(desc(y))
+
+## sets the levels of 'x' in the order they appear in the df
+female_df$x <- factor(female_df$x, levels = female_df$x)
+
+## plot
+ggplot(female_df,
+       aes(x=x, y=y)) +
+  geom_point() +
+  geom_segment(aes(x = x, xend = x, y = 0, yend = y)) +
+  theme_bw() +
+  xlab("Tissue") +
+  ylab("Number of Transcripts") 
+
+## male depleted transcripts lollipop plots
+## create a data frame with male_tissue and the corresponding no. of depleted transcripts
+male_df <- data.frame(
+  x = c("Male Brain", "Male Heart", "Male Liver", "Male Lung", "Male Muscle", "Male Placenta"),
+  y = c(184, 26, 383, 677, 39, 135)
+) %>% 
+  arrange(desc(y))
+
+## sets the levels of 'x' in the order they appear in the df
+male_df$x <- factor(male_df$x, levels = male_df$x)
+
+## plot
+ggplot(male_df,
+       aes(x=x, y=y)) +
+  geom_point() +
+  geom_segment(aes(x = x, xend = x, y = 0, yend = y)) +
+  theme_bw() +
+  xlab("Tissue") +
+  ylab("Number of Transcripts") 
+```
+
+
+
+

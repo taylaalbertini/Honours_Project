@@ -1,0 +1,124 @@
+"0","library(plyr)"
+"0","library(reshape2)"
+"0","library(dplyr)"
+"0","library(stringr)"
+"0","library(readxl)"
+"0","library(readr)"
+"0","library(magrittr)"
+"0","library(ggplot2)"
+"0","library(edgeR)"
+"0","library(limma)"
+"0","library(Glimma)"
+"0","library(RColorBrewer)"
+"0","library(IRanges)"
+"2","Loading required package: BiocGenerics
+"
+"2","
+Attaching package: ‘BiocGenerics’
+
+"
+"2","The following object is masked from ‘package:limma’:
+
+    plotMA
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    combine, intersect, setdiff, union
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    IQR, mad, sd, var, xtabs
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    anyDuplicated, aperm, append, as.data.frame, basename, cbind, colnames, dirname, do.call, duplicated, eval, evalq, Filter,
+    Find, get, grep, grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget, order, paste, pmax, pmax.int, pmin,
+    pmin.int, Position, rank, rbind, Reduce, rownames, sapply, setdiff, table, tapply, union, unique, unsplit, which.max,
+    which.min
+
+"
+"2","Loading required package: S4Vectors
+"
+"2","Loading required package: stats4
+"
+"2","
+Attaching package: ‘S4Vectors’
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    first, rename
+
+"
+"2","The following object is masked from ‘package:plyr’:
+
+    rename
+
+"
+"2","The following object is masked from ‘package:utils’:
+
+    findMatches
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    expand.grid, I, unname
+
+"
+"2","
+Attaching package: ‘IRanges’
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    collapse, desc, slice
+
+"
+"2","The following object is masked from ‘package:plyr’:
+
+    desc
+
+"
+"0","library(GenomicFeatures)"
+"2","Loading required package: GenomeInfoDb
+"
+"2","Loading required package: GenomicRanges
+"
+"2","
+Attaching package: ‘GenomicRanges’
+
+"
+"2","The following object is masked from ‘package:magrittr’:
+
+    subtract
+
+"
+"2","Loading required package: AnnotationDbi
+"
+"2","Loading required package: Biobase
+"
+"2","Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with 'browseVignettes()'. To cite Bioconductor, see 'citation(""Biobase"")', and
+    for packages 'citation(""pkgname"")'.
+
+"
+"2","
+Attaching package: ‘AnnotationDbi’
+
+"
+"2","The following object is masked from ‘package:dplyr’:
+
+    select
+
+"
+"0","# set project directory "
+"0","projectDir <- ""/Users/taylaalbertini/Desktop/R studio/honours_project/termPlacenta_comparison/rawData"""
+"0","import_early_placentaF <- file.path(projectDir, ""rawCounts_placentaF_early.csv"")"
+"0","import_early_placentaM <- file.path(projectDir, ""rawCounts_placentaM_early.csv"")"
+"0","import_term_placenta <- file.path(projectDir, ""rawCounts_term_placenta.csv"")"
+"0","import_metaData_term <- file.path(projectDir, ""metaData_term.csv"")"
+"0","input_genome_gff3_file <- file.path(projectDir, ""gencode.v29.chr_patch_hapl_scaff.annotation.gff3"")"

@@ -1,0 +1,113 @@
+---
+title: "enrichment_analysis"
+output: html_document
+date: "2024-07-29"
+---
+
+# load the relevant libraries and set project dir
+```{r}
+library(stringr)
+library(magrittr)
+library(ggplot2)
+library(RColorBrewer)
+library(ggkegg)
+library(tidygraph)
+library(scatterpie)
+library(dplyr)
+library(readxl)
+library(readr)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(clusterProfiler)
+library(enrichplot)
+library(gprofiler2)
+
+# set project directory
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/term_sex_specific_analysis/rawData"
+import_placentaF_depleted <- file.path(projectDir, "termF_placenta_depleted_annotated.csv")
+import_placnetaM_depleted <- file.path(projectDir, "termM_placenta_depleted_annotated.csv")
+```
+
+# import files
+```{r}
+# import placenta female depleted table and make it into a data frame
+placentaF_depleted <- read_delim(import_placentaF_depleted,
+                                 col_names = TRUE,
+                                 delim = ",") %>%
+  as.data.frame() %>% 
+  ## tidy placentaF_depleted - remove the "...1" column
+  dplyr::select(., -...1)
+
+# import male placenta depleted table and make into a data frame
+placentaM_depleted <- read_delim(import_placnetaM_depleted,
+                                 col_names = TRUE,
+                                 delim = ",") %>%
+  as.data.frame() %>% 
+  ## tidy placentaM_depleted - remove the "...1" column
+  dplyr::select(., -...1)
+```
+
+# gprofiler2 functional enrichment analysis
+```{r}
+# female placenta enrichment analysis
+## order genes by nCPM_ratio
+placentaF_ordered <- placentaF_depleted[order(placentaF_depleted$nCPM_ratio_TMM, decreasing = TRUE),]
+
+# perform enrichment analysis on ordered genes
+placentaF_ordered_enriched <- gost(placentaF_ordered$ensembl, organism = "hsapiens",
+                                   ordered_query = TRUE)
+
+head(placentaF_ordered_enriched$result, 7)
+
+# male placenta enrichment analysis
+# order genes by nCPM_ratio
+placentaM_ordered <- placentaM_depleted[order(placentaM_depleted$nCPM_ratio_TMM, decreasing = TRUE),]
+# perform enrichment on ordered genes
+placentaM_ordered_enriched <- gost(placentaM_ordered$ensembl, organism = "hsapiens",
+                                   ordered_query = TRUE)
+head(placentaM_ordered_enriched$result, 50)
+```
+
+# semantic reduction of GO terms
+```{r}
+# load simplifyEnrichment package
+library(simplifyEnrichment)
+library(org.Hs.eg.db)
+library(Cairo)
+
+# semantic reduction of female GO terms
+## craete a similarity matrix of the GO terms 
+### make a vector of GO IDs
+go_id_vectorF <- placentaF_ordered_enriched$result$term_id %>%
+  as.vector()
+go_id_similarityMatrixF <- GO_similarity(go_id_vectorF, 
+                     ont = "BP", 
+                     db = "org.Hs.eg.db", 
+                     measure = "Rel", 
+                     remove_orphan_terms = FALSE)
+## use the simplifyEnrichment tool to cluster the GO terms 
+go_id_simplifiedF <- simplifyGO(mat = go_id_similarityMatrixF, 
+                               method = "binary_cut", 
+                               control = list(), 
+                               plot = TRUE,
+                               verbose = TRUE) 
+
+
+# semantic reduction of male GO terms
+## craete a similarity matrix of the GO terms 
+### make a vector of GO IDs
+go_id_vectorM <- placentaM_ordered_enriched$result$term_id %>%
+  as.vector()
+go_id_similarityMatrixM <- GO_similarity(go_id_vectorM, 
+                     ont = "BP", 
+                     db = "org.Hs.eg.db", 
+                     measure = "Rel", 
+                     remove_orphan_terms = FALSE)
+## use the simplifyEnrichment tool to cluster the GO terms 
+go_id_simplifiedM <- simplifyGO(mat = go_id_similarityMatrixM, 
+                               method = "binary_cut", 
+                               control = list(), 
+                               plot = TRUE, 
+                               verbose = TRUE)
+```

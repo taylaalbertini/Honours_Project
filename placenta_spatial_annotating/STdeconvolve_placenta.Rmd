@@ -1,0 +1,187 @@
+---
+title: "STdeconvolve_placenta"
+output: html_document
+date: "21-06-2024"
+---
+
+# load libraries and set project directory 
+```{r}
+# load the relevant libraries 
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(DESeq2)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+library(IRanges)
+library(GenomicFeatures)
+
+# set project directory 
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/rawData"
+
+# set path to data files 
+import_tissue_pos <- file.path(projectDir, "tissue_positions_list.csv")
+```
+
+# read data into R
+```{r}
+# setting column names
+column_names <- c("barcode", "in_tissue", "array_row", "array_col", "pxl_row_in_fullres", "pxl_col_in_fullers")
+
+#read the tissue position info into R
+pos_info <- read_delim(file = import_tissue_pos,
+                       col_names = column_names,
+                       delim = ",")
+head(pos_info)
+
+# take just the pxl_row_in_fullres and pxl_col_in_fullres columns 
+## row (y-coordinate) and column (x-coordinate) of a spatial barcode in the full-resolution image of the tissue
+pos <- pos_info[, c("pxl_row_in_fullres", "pxl_col_in_fullers")]
+## make the rownames the barcodes 
+rownames(pos) <- pos_info$barcode
+plot(pos)
+
+# read in the matrix data 
+library(Matrix)
+gxep <- Matrix::readMM("/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/rawData/matrix.mtx.gz")
+## check the dimentions of the matrix data
+  ### the length of feature (genes) and barcode should be equal to dim 2 and 1 respectfully
+dim(gxep)
+gxep[1:5,1:5]
+
+# read in barcode data
+barcode_info <- read.csv(file = "/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/rawData/barcodes.tsv.gz", sep = "\t", header = FALSE)
+## view the head of the data
+head(barcode_info)
+## check the dimentions
+dim(barcode_info)
+## only information we need from barcode_info are thee atual barcode
+barcode <- barcode_info[,1]
+## check that the barcode length = dim 2 of gxep
+length(barcode)
+
+# read in the gene information
+gene_info <- read.csv(file = "/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/rawData/features.tsv.gz", sep = "\t", header = FALSE)
+## view the dimentions fo the gene_info
+dim(gene_info)
+## only information we need from this data are the gene names = SYMBOLs
+gene <- gene_info[,2]
+### check that the length of gene is equal to the first dim of gxep
+length(gene)
+  
+# process the gxep information 
+## make column names = barcode
+colnames(gxep) <- barcode
+## make row names = gene
+rownames(gxep) <- make.unique(gene)
+## check what the matrix looks like  
+gxep[1:5,1:5] 
+
+# quick quality checks
+par(mfrow=c(1,2))
+hist(log10(colSums(gxep)+1))
+hist(log10(rowSums(gxep)+1))
+
+# ggplot to visualise 
+## change the order of pos
+pos <- pos[colnames(gxep), ]
+rownames(pos) <- colnames(gxep)
+
+## create df for plot and 
+libsize_df <- data.frame(pos, libsize=colSums(gxep))
+ggplot(libsize_df, aes(x=pxl_col_in_fullers, y=pxl_row_in_fullres, col=libsize)) +
+  geom_point()
+
+### creating a plot with expression of a specific gene
+#### fix position
+pos[,1] <- -pos[,1]
+pos[,1] <- pos[,1] - min(pos[,1])
+
+#### select for the gene and create a df with just that gene and its expression 
+g <-"AOC1"
+countmat_3 <- gxep[g,] %>%
+  as.data.frame()
+#### create a df consisting of the coordinates of each cell and its respective gene expression of the selected gene
+gene_plot <- data.frame(pos, libsize=rowSums(countmat_3))
+#### plot the gene expression of SZT2
+ggplot(gene_plot, aes(x=pxl_col_in_fullers, y=pxl_row_in_fullres, col=libsize)) +
+  geom_point()
+```
+
+# STdeconvolve
+```{r}
+library(STdeconvolve)
+## remove pixels with too few genes
+counts <- cleanCounts(gxep, 
+                      min.lib.size = 100,
+                      min.reads = 10)
+dim(counts)
+
+## feature select for genes
+corpus <- restrictCorpus(counts, 
+                         removeAbove=1.0, 
+                         removeBelow = 0.05, 
+                         nTopOD = NA,
+                         alpha = 0.01)
+dim(corpus)
+corpus <- corpus[which(!Matrix::rowSums(corpus) == 0),]
+rownames(pos) <- colnames(gxep) 
+
+#### plot the gene expression of SZT2
+ggplot(gene_plot, aes(x=pxl_col_in_fullers, y=pxl_row_in_fullres, col=libsize)) +
+  geom_point()
+
+## choose optimal number of cell-types
+ldas <- fitLDA(t(as.matrix(corpus)), Ks = c(21))
+
+## get best model results
+optLDA <- optimalModel(models = ldas, opt = "21")
+
+## extract deconvolved cell-type proportions (theta) and transcriptional profiles (beta)
+results <- getBetaTheta(optLDA, 
+                        ### cell-types contributing to less than 0.05 of pixel proportion are filtered out
+                        perc.filt = 0.05,
+                        betaScale = 1000)
+deconProp <- results$theta # the distribution of cell types and gene expression profile - abundance of gene expression in each cell type (cluster) 
+deconGexp <- results$beta
+
+## emsure there are no infinite numbers 
+any(!is.finite(deconProp))
+any(!is.finite(pos$pxl_col_in_fullres))
+
+## check the dimensions of the deconProp and pos
+### the nrow for both should be equal to each other
+dim(deconProp) # no. of rows indicates the number of spots (spatial resolution) whilst the no. of columns indicates the number of cell-types 
+dim(pos)
+### make the nrow = deconProp for pos
+pos_decon <- pos[rownames(deconProp),]
+rownames(pos_decon) <- rownames(deconProp)
+#### visualize deconvolved cell-type proportions
+colnames(pos) <- c('x', 'y')
+
+# import the reference data 
+annot <- read.csv(file = "/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/rawData/CIBERSORTx_sigmatrix_Adjusted.csv", sep = "\t", header = TRUE)
+
+BiocManager::install("vizAllTopics")
+BiocManager::install("grDevices")
+library(scatterpie)
+
+vizAllTopics(deconProp, pos,
+                         topicOrder=seq(ncol(deconProp)),
+                         topicCols=rainbow(ncol(deconProp)),
+                         groups=annot,
+                         group_cols=rainbow(length(levels(annot))),
+                         r=(0.4),
+                         lwd=0.01,
+                         showLegend=TRUE,
+                         plotTitle=NA,
+                         overlay=NA)
+```
+

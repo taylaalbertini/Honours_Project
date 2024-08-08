@@ -1,0 +1,204 @@
+---
+title: "heart_f"
+output: html_document
+date: "2024-05-01"
+---
+
+# load libraries and set project directory
+```{r}
+# load the relevant libraries
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData"
+
+# set path for counts tables 
+import_ERR2704713 <- file.path(projDir, "heart_f/ERR2704713__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2704717 <- file.path(projDir, "heart_f/ERR2704717__GRCh38_ReadsPerGene_counts.tab")
+import_SRR2156549 <- file.path(projDir, "heart_f/SRR2156549__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3191749 <- file.path(projDir, "heart_f/SRR3191749__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3192433 <- file.path(projDir, "heart_f/SRR3192433__GRCh38_ReadsPerGene_counts.tab")
+import_SRR4421503 <- file.path(projDir, "heart_f/SRR4421503__GRCh38_ReadsPerGene_counts.tab")
+import_SRR9887711 <- file.path(projDir, "heart_f/SRR9887711__GRCh38_ReadsPerGene_counts.tab")
+import_SRR12503553 <- file.path(projDir, "heart_f/SRR12503553__GRCh38_ReadsPerGene_counts.tab")
+import_SRR12503569 <- file.path(projDir, "heart_f/SRR12503569__GRCh38_ReadsPerGene_counts.tab")
+import_SRR12503570 <- file.path(projDir, "heart_f/SRR12503570__GRCh38_ReadsPerGene_counts.tab")
+import_SRR12503571 <- file.path(projDir, "heart_f/SRR12503571__GRCh38_ReadsPerGene_counts.tab")
+import_SRR16145848 <- file.path(projDir, "heart_f/SRR16145848__GRCh38_ReadsPerGene_counts.tab")
+```
+
+# import the raw readCounts
+```{r}
+# import the counts tables
+## ERR2704713
+ERR2704713 <- read_delim(file = import_ERR2704713,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2704713=X2)
+
+## ERR2704717
+ERR2704717 <- read_delim(file = import_ERR2704717,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2704717=X2)
+
+## SRR2156549
+SRR2156549 <- read_delim(file = import_SRR2156549,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR2156549=X2)
+
+## SRR3191749
+SRR3191749 <- read_delim(file = import_SRR3191749,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3191749=X2)
+
+## SRR3192433
+SRR3192433 <- read_delim(file = import_SRR3192433,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3192433=X2)
+
+## SRR4421503
+SRR4421503 <- read_delim(file = import_SRR4421503,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR4421503=X2)
+
+## SRR9887711
+SRR9887711 <- read_delim(file = import_SRR9887711,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR9887711=X2)
+
+## SRR12503553
+SRR12503553 <- read_delim(file = import_SRR12503553,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR12503553=X2)
+
+## SRR12503569
+SRR12503569 <- read_delim(file = import_SRR12503569,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR12503569=X2)
+
+## SRR12503570
+SRR12503570 <- read_delim(file = import_SRR12503570,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR12503570=X2)
+
+## SRR12503571
+SRR12503571 <- read_delim(file = import_SRR12503571,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR12503571=X2)
+
+## SRR16145848
+SRR16145848 <- read_delim(file = import_SRR16145848,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR16145848=X2)
+```
+
+# stitch samples together
+```{r}
+# join samples together
+## left joins the sample column by the 'ensembl' column
+mergedCounts_heart_f <- dplyr::left_join(ERR2704713,ERR2704717, by="ensembl") %>%
+  dplyr::left_join(.,SRR2156549, by="ensembl") %>%
+  dplyr::left_join(.,SRR3191749, by="ensembl") %>%
+  dplyr::left_join(.,SRR3192433, by="ensembl") %>%
+  dplyr::left_join(.,SRR4421503, by="ensembl") %>%
+  dplyr::left_join(.,SRR9887711, by="ensembl") %>%
+  dplyr::left_join(.,SRR12503553, by="ensembl") %>%
+  dplyr::left_join(.,SRR12503569, by="ensembl") %>%
+  dplyr::left_join(.,SRR12503570, by="ensembl") %>%
+  dplyr::left_join(.,SRR12503571, by="ensembl") %>%
+  dplyr::left_join(.,SRR16145848, by="ensembl")
+
+# remove rows with all zeros
+mergedCounts_heart_f <- mergedCounts_heart_f[rowSums(mergedCounts_heart_f[,-1])>0,]
+
+# convert 'ensembl' column to row names 
+## ensure there are no row names first
+rownames(mergedCounts_heart_f) <- NULL
+mergedCounts_heart_f %<>% tibble::column_to_rownames("ensembl")
+```
+
+# library size scatter plot
+```{r}
+# create a small data frame with information for the plot
+plotCounts_heart_f <- mergedCounts_heart_f %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_heart_f,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts female heart") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in female heart",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# output file
+```{r}
+write.csv(mergedCounts_heart_f, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/combined_raw/rawCounts_heart_f.csv"))
+```
+
+
+

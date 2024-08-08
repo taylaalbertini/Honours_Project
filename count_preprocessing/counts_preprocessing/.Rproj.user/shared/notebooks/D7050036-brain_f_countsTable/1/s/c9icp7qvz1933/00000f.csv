@@ -1,0 +1,309 @@
+"0","# import the counts tables"
+"0","## ERR1473006"
+"0","ERR1473006 <- read_delim(file = import_ERR1473006,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473006=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473007"
+"0","ERR1473007 <- read_delim(file = import_ERR1473007,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473007=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473009"
+"0","ERR1473009 <- read_delim(file = import_ERR1473009,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473009=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473010"
+"0","ERR1473010 <- read_delim(file = import_ERR1473010,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473010=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473059"
+"0","ERR1473059 <- read_delim(file = import_ERR1473059,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473059=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473060"
+"0","ERR1473060 <- read_delim(file = import_ERR1473060,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473060=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473061"
+"0","ERR1473061 <- read_delim(file = import_ERR1473061,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473061=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473064"
+"0","ERR1473064 <- read_delim(file = import_ERR1473064,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473064=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473067"
+"0","ERR1473067 <- read_delim(file = import_ERR1473067,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473067=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473070"
+"0","ERR1473070 <- read_delim(file = import_ERR1473070,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473070=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473071"
+"0","ERR1473071 <- read_delim(file = import_ERR1473071,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473071=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473073"
+"0","ERR1473073 <- read_delim(file = import_ERR1473073,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473073=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473076"
+"0","ERR1473076 <- read_delim(file = import_ERR1473076,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473076=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473078"
+"0","ERR1473078 <- read_delim(file = import_ERR1473078,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473078=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473079"
+"0","ERR1473079 <- read_delim(file = import_ERR1473079,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473079=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473080"
+"0","ERR1473080 <- read_delim(file = import_ERR1473080,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473080=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473081"
+"0","ERR1473081 <- read_delim(file = import_ERR1473081,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473081=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473082"
+"0","ERR1473082 <- read_delim(file = import_ERR1473082,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473082=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## ERR1473083"
+"0","ERR1473083 <- read_delim(file = import_ERR1473083,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,ERR1473083=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## SRR3625894"
+"0","SRR3625894 <- read_delim(file = import_SRR3625894,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,SRR3625894=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## SRR3626528"
+"0","SRR3626528 <- read_delim(file = import_SRR3626528,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,SRR3626528=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."
+"0","## SRR3626531"
+"0","SRR3626531 <- read_delim(file = import_SRR3626531,"
+"0","                         col_names = FALSE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(ensembl=X1,SRR3626531=X2)"
+"2","[1mRows: [22m[34m58721[39m [1mColumns: [22m[34m2[39m"
+"2","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m (1): X1
+[32mdbl[39m (1): X2"
+"2","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message."

@@ -1,0 +1,180 @@
+---
+title: "male_depleted_plots"
+output: html_document
+date: "2024-07-04"
+---
+
+# load libraries and set project directory 
+```{r}
+# load relevant libraries 
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set project directory
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/sexSpecific_comparison/rawData"
+
+# set path for data tables 
+import_depletedM <- file.path(projectDir, "depleted_M.csv")
+import_meanM_ncpms <- file.path(projectDir, "mean_placenta_cpms_TMM.csv")
+```
+
+# load data files
+```{r}
+# import male placenta depleted transcript table
+placentaM_depleted <- read_delim(file = import_depletedM,
+                           col_names = TRUE,
+                           delim = ",") %>%
+  as.data.frame() %>%
+  ## remove the first column "...1" that;s input when the file is imported
+  dplyr::select(., -...1)
+
+# import ncpms of all male tissues
+ncpms_male <- read_delim(file = import_meanM_ncpms,
+                           col_names = TRUE,
+                           delim = ",") %>%
+  as.data.frame() %>%
+  ## remove the first column "...1" that;s input when the file is imported
+  dplyr::select(., -...1)
+```
+
+# heatmap of male placenta depleted genes
+```{r}
+# transform ncpm table so that 'ensembl' are rownames and sex_tissue are columns with ncpms
+ncpms_male_2 <- t(ncpms_male) %>%
+  data.frame() %>%
+  tibble::rownames_to_column("ensembl")
+
+# tidy table
+## remove placenta counts
+ncpms_male_2 <- ncpms_male_2[,-3]
+## rename column names
+colnames(ncpms_male_2) <- gsub("X1", "Female Placenta", colnames(ncpms_male_2))
+## remove sex_tissue row
+ncpms_male_2 <- ncpms_male_2[-1,]
+
+# subset placentaF_depleted to only include ncpms_TMM for placenta and corresponding ensembl IDs
+depleted_placentaM <- dplyr::select(placentaM_depleted, ensembl, nCPM_male_placenta_TMM)
+
+# left join ncpms_male_2 to depleted_placentaF
+heat_plot <- dplyr::left_join(depleted_placentaM, ncpms_male_2, by = join_by(ensembl))
+
+# tidy 
+## replace placenta colname 
+colnames(heat_plot) <- gsub("nCPM_male_placenta_TMM", "Male Placenta", colnames(heat_plot))
+## put ncpms in descending order
+heat_plot_ordered <- heat_plot[order(heat_plot$`Male Placenta`, decreasing = TRUE),]
+## make heat_plot_ordered numeric
+heat_plot_ordered$`Female Placenta` <- as.numeric(heat_plot_ordered$`Female Placenta`)
+## change order so that placenta is last
+heat_plot_ordered <- dplyr::relocate(heat_plot_ordered, `Male Placenta`, .after = `Female Placenta`)
+rownames(heat_plot_ordered) <- NULL
+pheat_plot <- tibble::column_to_rownames(heat_plot_ordered, var = "ensembl")
+
+# complex heatmap
+library(ComplexHeatmap)
+
+# Heatmap function to visualise the matrix as a heatmap with default settings
+## make my df a matrix
+class(pheat_plot)
+mat <- as.matrix(pheat_plot)
+
+## column splot
+column_split_vector <- c(rep("Group 1", 1), "Group 2")
+
+## craete box plot annotation
+column_ha <- HeatmapAnnotation(`log10 (nCPMs)` = anno_boxplot(log10(mat), which = c("column"), height = unit(4, "cm")))
+
+## print heatmap with annotation
+heatmapM <- Heatmap(log10(mat), 
+        column_split = column_split_vector,
+        column_title = "Tissues", 
+        column_title_gp = gpar(fontsize = 12),
+        column_title_side = c("bottom"),
+        row_title = "Genes", 
+        row_title_gp = gpar(fontsize = 12),
+        show_row_names = FALSE,
+        column_names_rot = 45,
+        column_names_gp = gpar(fontsize = 10),
+        cluster_rows = FALSE,
+        cluster_columns = FALSE,
+        width = unit(2, "cm"),
+        name = "log10 (nCPM)",
+        border = "black",
+        bottom_annotation = column_ha)
+
+heatmapM
+
+# export heatmap as jpeg 
+path_save <- "/Users/taylaalbertini/Desktop/R studio/honours_project/sexSpecific_comparison/analysis/heatmaps/male_depleted_heatmap_update.jpeg"
+
+jpeg(path_save, width = 4000, height = 3500, res = 400)
+draw(heatmapM)
+dev.off()
+```
+
+# scatter plots
+```{r}
+# read in annotated data
+annot_depleted <- read_delim(file = file.path(projectDir, "placenta_male_depleted_annotated.csv"),
+                             col_names = TRUE,
+                             delim = ",") %>%
+  as.data.frame() %>%
+  ## remove the first column "...1" that;s input when the file is imported
+  dplyr::select(., -...1)
+
+# make an effect size column
+#annot_depleted$effect_size <- annot_depleted$nCPM_5_TMM - annot_depleted$nCPM_placenta_TMM
+
+# subset annot_depleted to include hgnc symbols, TMM normalised ncpms and nCPM_ratio_TMM
+scatter <- dplyr::select(annot_depleted, hgnc_symbol, nCPM_male_placenta_TMM, nCPM_ratio_TMM)
+
+# order by nCPM_ratio_TMM - descending 
+scatter_ordered <- scatter[order(scatter$nCPM_ratio_TMM, decreasing = TRUE),]
+
+# convert hgnc_symbol from a column to row names 
+rownames(scatter_ordered) <- NULL
+scatter_plot <- tibble::column_to_rownames(scatter_ordered, var = "hgnc_symbol")
+
+# create a scatter plot where x-axis = nCPMs and y-axis = nCPM_ratio using ggplot2
+library(ggrepel)
+ggplot(data = scatter_plot,
+       aes(x = nCPM_male_placenta_TMM,
+           y = nCPM_ratio_TMM)) +
+  geom_point(#size = scatter_plot$effect_size * 0.05,
+             color = "black",
+             shape = 1) +
+  #ggtitle("Depleted male mid-gestation placental transcripts compared with female mid-gestation placenta") +
+  #scale_size_continuous(name = "Effect size", range = c(1, 2)) +
+  labs(x = "Normalised Counts Per Million", 
+       y = "nCPM(rank=1)/nCPM(rank=2)") +
+  ## set the y-axis numbers shown
+  scale_y_continuous(breaks = c(pretty(range(scatter_plot$y)), 3, 40, 80, 120, 150)) +
+  
+  ## ensures the y-axis starts at 0
+  coord_cartesian(ylim = c(0, max(scatter_plot$nCPM_ratio_TMM) * 1.1), expand = FALSE) +
+  
+  geom_text_repel(data = subset(scatter_plot, nCPM_ratio_TMM > 3), ## annotates/labels the ten-greatest nCPM ratio genes 
+            aes(label = rownames(subset(scatter_plot, nCPM_ratio_TMM > 3))),
+            nudge_y = 10,
+            size          = 2.5,
+            box.padding   = 1.5,
+            point.padding = 0.5,
+            force         = 100,
+            segment.size  = 0.2,
+            segment.color = "grey50",
+            direction     = "x") +
+  
+  theme_bw() + 
+  theme(plot.title = element_text(size = 10)) ## sets the plot background theme to black and white
+ggsave("maleplotvsfemale.png", width = 7, height = 7, units = "in") ## exported the last graph printed
+```

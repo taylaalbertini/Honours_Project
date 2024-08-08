@@ -1,0 +1,131 @@
+---
+title: "lung_m"
+output: html_document
+date: "2024-05-01"
+---
+
+# load libraries and set project directory 
+```{r}
+# load the relevant libraries 
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData"
+
+# set path for counts tables 
+import_SRR3192467 <- file.path(projDir, "lung_m/SRR3192467__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3192468 <- file.path(projDir, "lung_m/SRR3192468__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3192497 <- file.path(projDir, "lung_m/SRR3192497__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3192498 <- file.path(projDir, "lung_m/SRR3192498__GRCh38_ReadsPerGene_counts.tab")
+```
+
+# import raw readCounts
+```{r}
+# import the counts tables
+## SRR3192467
+SRR3192467 <- read_delim(file = import_SRR3192467,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3192467=X2)
+
+## SRR3192468
+SRR3192468 <- read_delim(file = import_SRR3192468,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3192468=X2)
+
+## SRR3192497
+SRR3192497 <- read_delim(file = import_SRR3192497,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3192497=X2)
+
+## SRR3192498
+SRR3192498 <- read_delim(file = import_SRR3192498,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3192498=X2)
+```
+
+# stitch samples together
+```{r}
+# join samples together 
+## left joins the sample column by the 'ensembl' column
+mergedCounts_lung_m <- dplyr::left_join(SRR3192467,SRR3192468, by="ensembl") %>%
+  dplyr::left_join(.,SRR3192497, by="ensembl") %>%
+  dplyr::left_join(.,SRR3192498, by="ensembl") 
+
+# remove rows with all zeros
+mergedCounts_lung_m <- mergedCounts_lung_m[rowSums(mergedCounts_lung_m[,-1])>0,]
+
+# convert 'ensembl' column to row names 
+## ensure there are no row names first
+rownames(mergedCounts_lung_m) <- NULL
+mergedCounts_lung_m %<>% tibble::column_to_rownames("ensembl")
+```
+
+# library size scatter plot
+```{r}
+# create a small data frame with information for the plot
+plotCounts_lung_m <- mergedCounts_lung_m %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_lung_m,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts male lung") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in male lung",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# output file
+```{r}
+write.csv(mergedCounts_lung_m, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/combined_raw/rawCounts_lung_m.csv"))
+```
+
+

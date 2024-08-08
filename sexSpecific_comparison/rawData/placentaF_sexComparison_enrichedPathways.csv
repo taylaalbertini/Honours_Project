@@ -1,0 +1,10 @@
+"","query","significant","p_value","term_size","query_size","intersection_size","precision","recall","term_id","source","term_name","effective_domain_size","source_order"
+"1","query_1",TRUE,0.00957784284495098,29,8,2,0.25,0.0689655172413793,"GO:0141052","GO:MF","histone H3 demethylase activity",20212,10775
+"2","query_1",TRUE,0.0109653535272357,31,8,2,0.25,0.0645161290322581,"GO:0032452","GO:MF","histone demethylase activity",20212,4438
+"3","query_1",TRUE,0.0109653535272357,31,8,2,0.25,0.0645161290322581,"GO:0140457","GO:MF","protein demethylase activity",20212,10501
+"4","query_1",TRUE,0.0192984991012772,41,8,2,0.25,0.048780487804878,"GO:0032451","GO:MF","demethylase activity",20212,4437
+"5","query_1",TRUE,0.0428983361513505,61,8,2,0.25,0.0327868852459016,"GO:0016706","GO:MF","2-oxoglutarate-dependent dioxygenase activity",20212,2912
+"6","query_1",TRUE,0.00150374812146073,18,8,3,0.375,0.166666666666667,"HP:0001450","HP","Y-linked inheritance",4958,1082
+"7","query_1",TRUE,0.00987152133154984,1934,10,7,0.7,0.00361944157187177,"TF:M10065_1","TF","Factor: Sox-10; motif: MAANRRNNNCWTTGTT; match class: 1",20045,7779
+"8","query_1",TRUE,0.0215145607500692,749,10,5,0.5,0.00667556742323097,"TF:M00410_1","TF","Factor: Sox-9; motif: NNNNAACAATRGNN; match class: 1",20045,7921
+"9","query_1",TRUE,0.0260545809312057,15,9,2,0.222222222222222,0.133333333333333,"TF:M08727","TF","Factor: A-Myb:HOXA13; motif: CTCGTAAAWNNNNRMCGTTR",20045,5412

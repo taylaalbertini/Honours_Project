@@ -1,0 +1,152 @@
+---
+title: "norm_combined_termM"
+output: html_document
+date: "2024-07-29"
+---
+
+# load the relevant libraries and set project dir
+```{r}
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set project directory
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/term_sex_specific_analysis/rawData"
+import_TMM_depletedM <- file.path(projectDir, "TMM_placentaM_depleted.csv")
+import_DESq_depletedM <- file.path(projectDir, "DESq_placentaM_depleted.csv")
+input_genome_gff3_file <- file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/oxygen_threshold/rawData/gencode.v29.chr_patch_hapl_scaff.annotation.gff3")
+```
+
+# import files
+```{r}
+# TMM_depletedM
+TMM_depletedM <- read_delim(file = import_TMM_depletedM,
+                            col_names = TRUE,
+                            delim = ",") %>%
+  as.data.frame() %>% 
+  ## tidy df - remove the "..1" column
+  dplyr::select(., -...1)
+
+# DESq_depletedM
+DESq_depletedM <- read_delim(file = import_DESq_depletedM,
+                             col_names = TRUE,
+                             delim = ",") %>%
+  as.data.frame() %>% 
+  ## tidy df - remove the "..1" column
+  dplyr::select(., -...1)
+```
+
+# import gencode
+```{r}
+# import the gencodev32_gff_inFile file
+all_gencode_v29 <- rtracklayer::import(input_genome_gff3_file)
+# this file contains more information than we need here
+# subset out only the columns we need
+gene_data <- data.frame(ensembl = all_gencode_v29@elementMetadata$gene_id,
+                        hgnc_symbol = all_gencode_v29@elementMetadata$gene_name,
+                        seqnames = all_gencode_v29@seqnames,
+                        gene_type = all_gencode_v29@elementMetadata$gene_type)
+# we're left with multiple identical rows, keep one each
+gencode_v29_gene_id_symbol_chr_biotype <- gene_data %>%
+  dplyr::distinct(., .keep_all = TRUE)
+# which leaves us with the following dimensions where there is a unique combination of ensembl ID, hgnc symbol and chromosome
+dim(gencode_v29_gene_id_symbol_chr_biotype) # 64837 3
+# this does however, leave us with duplicate ensembl IDs
+dim(gencode_v29_gene_id_symbol_chr_biotype[!duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl), ]) # 64792 3
+# after generating a table to see the duplicates I can see that this is an X/Y chromosome issue. All genes are assigned to both chromosomes
+duplicate_rows <- gencode_v29_gene_id_symbol_chr_biotype[duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl) | duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl, fromLast = TRUE),]
+# remove duplicates (we don't use the chromosome information for anything)
+gencode <- gencode_v29_gene_id_symbol_chr_biotype[!duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl), ]
+```
+
+# fulfilment of criteria (1) and (2) for TMM and DESq2 normalisation 
+```{r}
+# tidy the TMM and DESq2 normalised dfs
+## filter the df to only including the relevant pieces of information and make specific to normalisation technique
+    # TMM 
+    ## remove rank column
+    TMM_depletedM <- TMM_depletedM[,-3]
+    ## rename columns to be specific to TMM normalisation
+    colnames(TMM_depletedM) <- gsub("tissue", "tissue_TMM", colnames(TMM_depletedM))
+    colnames(TMM_depletedM) <- gsub("nCPM_1", "nCPM_1_TMM", colnames(TMM_depletedM))
+    colnames(TMM_depletedM) <- gsub("nCPM_2", "nCPM_termM_placenta_TMM", colnames(TMM_depletedM))
+    colnames(TMM_depletedM) <- gsub("nCPM_ratio", "nCPM_ratio_TMM", colnames(TMM_depletedM))
+  
+    # DESq
+    ## remove rank column
+    DESq_depletedM <- DESq_depletedM[,-3]
+    ## rename columns to be specific to TMM normalisation
+    colnames(DESq_depletedM) <- gsub("tissue", "tissue_DESq", colnames(DESq_depletedM))
+    colnames(DESq_depletedM) <- gsub("nCPM_1", "nCPM_1_DESq", colnames(DESq_depletedM))
+    colnames(DESq_depletedM) <- gsub("nCPM_2", "nCPM_termM_placenta_DESq", colnames(DESq_depletedM))
+    colnames(DESq_depletedM) <- gsub("nCPM_ratio", "nCPM_ratio_DESq", colnames(DESq_depletedM))
+      
+## test to ensure there are no duplicated ensembl names
+sum(duplicated(TMM_depletedM$ensembl))
+        
+# left join TMM_depletedM to DESq_depletedM
+placentaM_depleted <- dplyr::inner_join(TMM_depletedM, DESq_depletedM, by = join_by(ensembl))
+## export for plots
+write.csv(placentaM_depleted, file.path(projectDir, "termM_depleted.csv"))
+
+# left join gene signature with depleted ensembl id
+# left join genecode and placentaM_depleted
+placentaM_depleted_annotated <- dplyr::left_join(placentaM_depleted, gencode, by = join_by(ensembl))
+
+# tidy placentaM_depleted_annotated
+## remove seqnames and genetype columns
+placentaM_depleted_annotated <- dplyr::select(placentaM_depleted_annotated, -seqnames, -gene_type)
+## remove the period and numbers thereafter
+placentaM_depleted_annotated_2 <- tidyr::separate(placentaM_depleted_annotated, col = ensembl, into = c("ensembl", "right")) %>%
+  dplyr::select(., -right)
+```
+
+# create a table of depleted transcripts and their descriptions
+```{r}
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+deps <- c("ensembldb", "AnnotationHub")
+sapply(deps, function(x){
+  if (!require(x, quietly = TRUE, character.only = TRUE))
+    BiocManager::install(x)
+})
+
+library(ensembldb)
+library(AnnotationHub)
+# lets take a snapshot of the AnnotationHub data base
+ah <- AnnotationHub(ask = FALSE)
+# take a look at the information inside
+mcols(ah)
+# use the `query()` function to extract the information for humans
+ensdb_homo <- query(ah, c("EnsDb", "Homo sapiens"))
+# keep only the information for AH95744 (which is the same as your gencode V29)
+ensdb_104 <- ensdb_homo[["AH95744"]]
+# Extract gene-level information and take a look
+genes(ensdb_104, return.type = "data.frame") %>% View()
+# now put that gene-level information into a data frame
+genes_info <- genes(ensdb_104, return.type = "data.frame")
+
+# left join genes_info with placentaM_depleted_annotated_2
+## change geneid column name to ensembl
+colnames(genes_info) <- gsub("gene_id", "ensembl", colnames(genes_info)) 
+## left join the dfs
+placentaM_depleted_annotated_2 <- dplyr::left_join(placentaM_depleted_annotated_2, genes_info, by = join_by(ensembl))
+## tidy the df
+placentaM_depleted_annotated_2 <- dplyr::select(placentaM_depleted_annotated_2, -11:-17)
+placentaM_depleted_annotated_2 <- dplyr::select(placentaM_depleted_annotated_2, -12:-15)
+```
+
+# export placentaM_depleted_annotated_2
+```{r}
+write.csv(placentaM_depleted_annotated_2, file = file.path(projectDir, "termM_placenta_depleted_annotated.csv"))
+```

@@ -1,0 +1,27 @@
+{
+    "id": "0004686E",
+    "path": "~/Desktop/R studio/honours_project/oxygen_threshold/oxygen_readCounts_analysis.csv/DGEobject_TMM_oxy.Rmd",
+    "project_path": "DGEobject_TMM_oxy.Rmd",
+    "type": "r_markdown",
+    "hash": "1738831187",
+    "contents": "",
+    "dirty": false,
+    "created": 1716857017467.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "21,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1716786274,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1716786274,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,65 @@
+"0","# import and clean up the count tables "
+"0","## STOP"
+"0","STOP <- read_delim(file = import_STOP,"
+"0","                         col_names = TRUE,"
+"0","                         delim = ""\t"") %>%"
+"0","  as.data.frame()"
+"1","[1mRows: [22m[34m58676[39m [1mColumns: [22m[34m62[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m ""\t""
+[31mchr[39m  (1): gene_id
+[32mdbl[39m (61): SCP3412, SCP3492, SCP3929, SCP3954, SCP3962, SCP4010, SCP4059, SCP4157, SCP4196, SCP4319, SCP4578, SCP4809, SCP4913, STP0105, STP014...
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","# remove PE samples "
+"0","STOP <- dplyr::select(STOP, -c(SCP3412, SCP3962, SCP4154, SCP4157, SCP4164, SCP4538, SCP4726, STP0148, STP0230, STP0275, STP0282, STP0593, STP0677, STP0793, STP0944))"
+"0",""
+"0","## termF"
+"0","termF <- read_delim(file = import_termF,"
+"0","                         col_names = TRUE,"
+"0","                         delim = "","") %>%"
+"0","  as.data.frame() %>%"
+"0","  dplyr::select(., -""...1"")"
+"1","[1m[22mNew names:
+[36m•[39m `` -> `...1`
+"
+"1","[1mRows: [22m[34m44550[39m [1mColumns: [22m[34m10[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (1): ensemble
+[32mdbl[39m (9): ...1, SRR3111523, SRR3111524, SRR3111527, SRR3111530, SRR3111531, SRR3111532, SRR3111536, SRR3111537
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","  ### change ensembl to gene_id"
+"0","  colnames(termF) <- gsub(""ensemble"", ""gene_id"", colnames((termF)))"
+"0","  "
+"0","## termM"
+"0","termM <- read_delim(file = import_termM,"
+"0","                         col_names = TRUE,"
+"0","                         delim = "","") %>%"
+"0","  as.data.frame()  %>%"
+"0","  dplyr::select(., -""...1"") "
+"1","[1m[22mNew names:
+[36m•[39m `` -> `...1`
+"
+"1","[1mRows: [22m[34m44377[39m [1mColumns: [22m[34m10[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (1): ensemble
+[32mdbl[39m (9): ...1, SRR3111525, SRR3111526, SRR3111528, SRR3111529, SRR3111533, SRR3111534, SRR3111535, SRR3111538
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","  ### change ensembl to gene_id"
+"0","  colnames(termF) <- gsub(""ensemble"", ""gene_id"", colnames((termF)))"

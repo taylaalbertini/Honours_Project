@@ -1,0 +1,105 @@
+---
+title: "STdeconvolve_tutorial"
+output: html_document
+date: "2024-06-24"
+---
+
+# load libraries
+```{r}
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(DESeq2)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+library(IRanges)
+library(GenomicFeatures)
+
+# set project directory 
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/tutorial_rawData"
+import_tissue_pos <- file.path(projectDir, "tissue_positions_list.csv")
+import_barcodes <- file.path(projectDir, "barcodes.tsv.gz")
+```
+
+# read data into R
+```{r}
+# setting column names
+column_names <- c("barcode", "in_tissue", "array_row", "array_col", "pxl_row_in_fullres", "pxl_col_in_fullers")
+
+#read the tissue position info into R
+pos_info <- read_delim(file = import_tissue_pos,
+                       col_names = column_names,
+                       delim = ",")
+head(pos_info)
+
+pos <- pos_info[, c("pxl_row_in_fullres", "pxl_col_in_fullers")]
+rownames(pos) <- pos_info$barcode
+plot(pos)
+
+library(Matrix)
+gxep <- Matrix::readMM("/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/tutorial_rawData/matrix.mtx.gz")
+dim(gxep)
+gxep[1:5,1:5]
+
+barcodes <- read.csv(file = "/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/tutorial_rawData/barcodes.tsv.gz", sep = "\t", header = FALSE)
+barcode <- barcodes[,1]
+gene <- features[,2]
+
+length(barcode)
+length(gene)
+
+
+head(barcodes)
+dim(barcodes)
+colnames(gxep) <- barcodes$barcode
+features <- read.csv(file = "/Users/taylaalbertini/Desktop/R studio/honours_project/placenta_spatial_annotating/tutorial_rawData/features.tsv.gz", sep = "\t", header = FALSE)
+dim(features)
+rownames(gxep) <- features$V2
+
+g <- 'GATA3'
+countmat <- gxep[g,]
+print(countmat)
+# quick quality checks
+par(mfrow=c(1,2))
+hist(log10(colSums(gxep)+1))
+hist(log10(rowSums(gxep)+1))
+
+## ggplot to visualise 
+df <- data.frame(pos, libsize=colSums(gxep)[rownames(pos)])
+ggplot(df, aes(x=pxl_col_in_fullers, y=pxl_row_in_fullres, col=libsize)) +
+  geom_point()
+```
+
+# STdeconvolve
+```{r}
+library(STdeconvolve)
+
+## feature select for genes
+corpus <- restrictCorpus(gxep, 
+                         removeAbove=1.0, 
+                         removeBelow = 0.05, 
+                         nTopOD = NA, 
+                         alpha = 0.01)
+dim(corpus)
+
+## choose optimal number of cell-types
+ldas <- fitLDA(t(as.matrix(corpus)), Ks = seq(2, 9, by = 1))
+## get best model results
+optLDA <- optimalModel(models = ldas, opt = "min")
+## extract deconvolved cell-type proportions (theta) and transcriptional profiles (beta)
+results <- getBetaTheta(optLDA, perc.filt = 0.05, betaScale = 1000)
+deconProp <- results$theta
+deconGexp <- results$beta
+## visualize deconvolved cell-type proportions
+vizAllTopics(deconProp, pos,
+             groups = annot, 
+             group_cols = rainbow(length(levels(annot))),
+             r=0.4)	  
+```

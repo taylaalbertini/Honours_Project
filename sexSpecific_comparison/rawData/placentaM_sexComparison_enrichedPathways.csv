@@ -1,0 +1,4 @@
+"","query","significant","p_value","term_size","query_size","intersection_size","precision","recall","term_id","source","term_name","effective_domain_size","source_order"
+"1","query_1",TRUE,0.0166584373985886,1,2,1,0.5,1,"GO:0008397","GO:MF","sterol 12-alpha-hydroxylase activity",20212,1682
+"2","query_1",TRUE,0.0166584373985886,1,2,1,0.5,1,"GO:0033778","GO:MF","7alpha-hydroxycholest-4-en-3-one 12alpha-hydroxylase activity",20212,4680
+"3","query_1",TRUE,0.0166584373985886,1,2,1,0.5,1,"GO:0033779","GO:MF","5beta-cholestane-3alpha,7alpha-diol 12alpha-hydroxylase activity",20212,4681

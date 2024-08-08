@@ -1,0 +1,78 @@
+"0","# import the counts tables"
+"0","# placentaF_early"
+"0","placentaF_mid <- read_delim(file = import_mid_placentaF,"
+"0","                     col_names = TRUE,"
+"0","                     delim = "","") %>%"
+"0","  as.data.frame()"
+"1","[1m[22mNew names:
+[36m•[39m `` -> `...1`
+"
+"1","[1mRows: [22m[34m46817[39m [1mColumns: [22m[34m36[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m───────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (1): ensembl
+[32mdbl[39m (35): ...1, PAC0101, PAC0110, PAC0113, PAC0121, PAC0126, PAC0135, PAC017, PAC0183, PAC0191, PAC0196...
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","placentaF_mid <- placentaF_mid[,-1]"
+"0",""
+"0","# placentaM_early"
+"0","placentaM_mid <- read_delim(file = import_mid_placentaM,"
+"0","                     col_names = TRUE,"
+"0","                     delim = "","") %>%"
+"0","  as.data.frame()"
+"1","[1m[22mNew names:
+[36m•[39m `` -> `...1`
+"
+"1","[1mRows: [22m[34m42843[39m [1mColumns: [22m[34m43[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m───────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (1): ensembl
+[32mdbl[39m (42): ...1, PAC0068, PAC0092, PAC0125, PAC0128, PAC0130, PAC0137, PAC018, PAC0192, PAC020, PAC021, ...
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","placentaM_mid <- placentaM_mid[,-1]"
+"0","# placenta_term"
+"0","placenta_term <- read_delim(file = import_term_placenta,"
+"0","                     col_names = TRUE,"
+"0","                     delim = "","") %>%"
+"0","  dplyr::select(., ensembl = ...1, everything()) %>%"
+"0","  as.data.frame()"
+"1","[1m[22mNew names:
+[36m•[39m `` -> `...1`
+"
+"1","[1mRows: [22m[34m48945[39m [1mColumns: [22m[34m57[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m───────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m  (1): ...1
+[32mdbl[39m (56): SCP3628, SCP3660, SCP3780, SCP3843, SCP3877, SCP3929, SCP3954, SCP3992, SCP4059, SCP4139, SCP...
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"
+"0","# metaData"
+"0","metaData <- read_delim(file = import_metaData_term,"
+"0","                       col_names = TRUE,"
+"0","                       delim = "","") %>%"
+"0","  as.data.frame()"
+"1","[1mRows: [22m[34m131[39m [1mColumns: [22m[34m4[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m───────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (3): sampleID, tissue, sex
+[32mdbl[39m (1): gestationalAge
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"

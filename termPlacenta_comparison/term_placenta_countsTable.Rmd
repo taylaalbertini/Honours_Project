@@ -1,0 +1,144 @@
+---
+title: "term_placenta_countsTable"
+output: html_document
+date: "2024-05-29"
+---
+
+# load libraries
+```{r}
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/termPlacenta_comparison/rawData"
+import_STOP <- file.path(projDir, "rawCounts_SCOPE_STOP.csv")
+import_termF <- file.path(projDir, "rawCounts_termF.csv")
+import_termM <- file.path(projDir, "rawCounts_termM.csv")
+```
+
+# import the raw counts
+```{r}
+# import and clean up the count tables 
+## STOP
+STOP <- read_delim(file = import_STOP,
+                         col_names = TRUE,
+                         delim = "\t") %>%
+  as.data.frame()
+
+# remove PE samples by subsetting for only uncomplicated samples 
+samples <- c("SCP3628", "SCP3660", "SCP3780", "SCP3843", "SCP3877", "SCP3929", "SCP3954", "SCP3992", 
+             "SCP4059", "SCP4139", "SCP4196", "SCP4319", "SCP4536", "SCP4578", "SCP4706", "SCP4733", 
+             "SCP4748", "SCP4809", "SCP4913", "STP0016", "STP0023", "STP0105", "STP0378", "STP0582", 
+             "STP0583", "STP0596", "STP0636", "STP0692", "STP0761", "STP0788", "STP0795", "STP0852", 
+             "STP0867", "STP0888", "STP0903", "STP0932", "STP1002", "STP1082", "STP1087", "STP1206")
+
+## Include 'gene_id' in the selection
+columns_to_select <- c("gene_id", samples)
+
+## Check if all samples are in the original data frame
+if(all(samples %in% colnames(STOP))) {
+  # Select the specified columns including 'gene_id'
+  STOP <- dplyr::select(STOP, all_of(columns_to_select))
+  cat("Selection successful.")
+} else {
+  missing_samples <- samples[!samples %in% colnames(STOP)]
+  cat("The following samples are missing in the original data frame:", paste(missing_samples, collapse = ", "))
+}
+
+## termF
+termF <- read_delim(file = import_termF,
+                         col_names = TRUE,
+                         delim = ",") %>%
+  as.data.frame() %>%
+  dplyr::select(., -"...1")
+
+  ### change ensembl to gene_id
+  colnames(termF) <- gsub("ensemble", "gene_id", colnames((termF)))
+  
+## termM
+termM <- read_delim(file = import_termM,
+                         col_names = TRUE,
+                         delim = ",") %>%
+  as.data.frame()  %>%
+  dplyr::select(., -"...1") 
+
+  ### change ensembl to gene_id
+  colnames(termM) <- gsub("ensemble", "gene_id", colnames((termM)))
+```
+
+# stitch samples from the respecive term placenta tables together
+```{r}
+# join the samples together into one table
+mergedCounts_placenta_term <- dplyr::left_join(STOP,termF, by="gene_id") %>%
+  dplyr::left_join(.,termM, by="gene_id") 
+
+# replace any NA values with zero
+mergedCounts_placenta_term[is.na(mergedCounts_placenta_term)] <- 0
+# remove rows with all zeros
+mergedCounts_placenta_term <- mergedCounts_placenta_term[rowSums(mergedCounts_placenta_term[,-1])>0,]
+rownames(mergedCounts_placenta_term) <- NULL
+```
+
+# convert ensembl to row nammes
+```{r}
+mergedCounts_placenta_term %<>% tibble::column_to_rownames("gene_id")
+```
+
+# library scatter plot
+```{r}
+# create a small data frame with information for the plot
+plotCounts_placenta_term <- mergedCounts_placenta_term %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_placenta_term,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts term placenta - all samples\n(hg38)") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in term placenta",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# output file
+```{r}
+write.csv(mergedCounts_placenta_term, file = file.path(projDir, "rawCounts_term_placenta.csv"))
+```

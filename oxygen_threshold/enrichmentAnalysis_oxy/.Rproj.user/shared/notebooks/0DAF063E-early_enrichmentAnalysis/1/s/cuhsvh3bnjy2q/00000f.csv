@@ -1,0 +1,12 @@
+"0","# female placenta enrichment analysis
+placentaF_enriched <- gost(placentaF_depleted$ENSEMBL, organism = ""hsapiens"")
+"
+"2","Missing query
+"
+"0","# female placenta enrichment analysis"
+"0","placentaF_enriched <- gost(placentaF_depleted$ENSEMBL, organism = ""hsapiens"")"
+"2","Missing query
+"
+"0","head(placentaF_enriched$result)"
+"1","NULL
+"

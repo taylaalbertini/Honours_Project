@@ -1,0 +1,113 @@
+"0","library(stringr)"
+"0","library(magrittr)"
+"0","library(ggplot2)"
+"0","library(RColorBrewer)"
+"0","library(ggkegg)"
+"2","Loading required package: ggraph
+"
+"2","Loading required package: XML
+"
+"2","Loading required package: igraph
+"
+"2","
+Attaching package: ‘igraph’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    decompose, spectrum
+
+"
+"2","The following object is masked from ‘package:base’:
+
+    union
+
+"
+"2","Loading required package: tidygraph
+"
+"2","
+Attaching package: ‘tidygraph’
+
+"
+"2","The following object is masked from ‘package:igraph’:
+
+    groups
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    filter
+
+"
+"2","Registered S3 methods overwritten by 'dbplyr':
+  method         from
+  print.tbl_lazy     
+  print.tbl_sql      
+"
+"2","
+"
+"2","Registered S3 method overwritten by 'data.table':
+  method           from
+  print.data.table     
+"
+"0","library(tidygraph)"
+"0","library(scatterpie)"
+"0","library(dplyr)"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:igraph’:
+
+    as_data_frame, groups, union
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","library(readxl)"
+"0","library(readr)"
+"0","library(edgeR)"
+"2","Loading required package: limma
+"
+"0","library(limma)"
+"0","library(Glimma)"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
+"
+"0","library(clusterProfiler)"
+"2","
+"
+"2","clusterProfiler v4.12.0  For help: https://yulab-smu.top/biomedical-knowledge-mining-book/
+
+If you use clusterProfiler in published research, please cite:
+T Wu, E Hu, S Xu, M Chen, P Guo, Z Dai, T Feng, L Zhou, W Tang, L Zhan, X Fu, S Liu, X Bo, and G Yu. clusterProfiler 4.0: A universal enrichment tool for interpreting omics data. The Innovation. 2021, 2(3):100141
+"
+"2","
+Attaching package: ‘clusterProfiler’
+
+"
+"2","The following object is masked from ‘package:igraph’:
+
+    simplify
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    filter
+
+"
+"0","library(enrichplot)"
+"0",""
+"0","# set project directory"
+"0","projectDir <- ""/Users/taylaalbertini/Desktop/R studio/honours_project/sexSpecific_comparison/rawData"""
+"0","import_placentaF_depleted <- file.path(projectDir, ""placenta_female_depleted_annotated.csv"")"
+"0","import_placentaM_depleted <- file.path(projectDir, ""placenta_male_depleted_annotated.csv"")"

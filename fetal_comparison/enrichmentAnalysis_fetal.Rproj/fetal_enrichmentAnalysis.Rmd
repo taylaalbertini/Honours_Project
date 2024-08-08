@@ -1,0 +1,163 @@
+---
+title: "fetal_enrichmentAnalysis"
+output: html_document
+date: "2024-05-14"
+---
+
+# load libraries and set project directory 
+```{r}
+# load relevant libraries 
+library(ggkegg)
+library(tidygraph)
+library(scatterpie)
+library(dplyr)
+library(readxl)
+library(readr)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(clusterProfiler)
+library(enrichplot)
+library(stringr)
+library(magrittr)
+library(RColorBrewer)
+library(gprofiler2)
+
+# set project directory
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/rawData"
+
+# set path for depleted gene tables 
+import_placentaF_depleted <- file.path(projectDir, "placentaF_depleted_annotated.csv")
+import_placentaM_depleted <- file.path(projectDir, "placentaM_depleted_annotated.csv")
+```
+
+# import depleted gene tables 
+```{r}
+# import placenta female depleted table and make it into a data frame
+placentaF_depleted <- read_delim(import_placentaF_depleted,
+                                 col_names = TRUE,
+                                 delim = ",") %>%
+  as.data.frame() %>%
+  ## tidy placentaF_depleted - remove the "...1" column
+  dplyr::select(., -...1)
+
+# import male placenta depleted table and make into a data frame
+placentaM_depleted <- read_delim(import_placentaM_depleted,
+                                 col_names = TRUE,
+                                 delim = ",") %>%
+  as.data.frame() %>%
+  ## tidy placentaM_depleted - remove the "...1" column
+  dplyr::select(., -...1)
+```
+
+# GO functional enrichment analysis using gprofiler2 on female placenta depleted genes 
+```{r}
+# order genes by nCPM_ratio_TMM
+placentaF_ordered <- placentaF_depleted[order(placentaF_depleted$nCPM_ratio_TMM, decreasing = TRUE),]
+
+# perform GO enrichment analysis on ordered genes
+placentaF_ordered_enriched <- gost(placentaF_ordered$ensembl, organism = "hsapiens",
+                                   ordered_query = TRUE,
+                                   correction_method = "fdr")
+
+# print the enriched terms to visualise initial GO terms before semantic reduction 
+head(placentaF_ordered_enriched$result, 30)
+```
+
+# GO functional enrichment analysis using gprofiler2 on male placenta depleted genes 
+```{r}
+# order genes by nCPM_ratio_TMM 
+placentaM_ordered <- placentaM_depleted[order(placentaM_depleted$nCPM_5_TMM, decreasing = TRUE),]
+
+# perform GO enrichment on ordered genes
+placentaM_ordered_enriched <- gost(placentaM_ordered$ensembl, organism = "hsapiens",
+                                   ordered_query = TRUE,
+                                   correction_method = "fdr")
+
+# print the enriched terms to visualise initial GO terms before applying semantic reduction
+head(placentaM_ordered_enriched$result, 16)
+```
+
+# visualisation of gprofiler2 GO terms 
+```{r}
+# female placenta plot
+# make a 'publishable plot with top 4 enriched genes highlighted
+placentaF_enriched_plot <- gostplot(placentaF_ordered_enriched, interactive = FALSE)
+publish_gostplot(placentaF_enriched_plot, highlight_terms = c("GO:0050808", "GO:0022603", "GO:0007155", "GO:0098609"))
+
+# male placenta plot
+# make a 'publishable plot with top 4 enriched genes highlighted
+placentaM_enriched_plot <- gostplot(placentaM_ordered_enriched, interactive = FALSE)
+publish_gostplot(placentaM_enriched_plot, highlight_terms = c("GO:0034330", "GO:0031012", "GO:0030312", "GO:0044291"))
+```
+
+# semantic reduction of GO terms identified from female depleted genes
+```{r}
+# load simplifyEnrichment package and its dependencies 
+library(simplifyEnrichment)
+library(org.Hs.eg.db)
+library(Cairo)
+
+# craete a similarity matrix of the GO terms 
+## make a vector of GO IDs
+go_id_vectorF <- placentaF_ordered_enriched$result$term_id %>%
+  as.vector()
+## create the similarity matrix
+go_id_similarityMatrixF <- GO_similarity(go_id_vectorF, 
+                     ont = "BP", 
+                     db = "org.Hs.eg.db", 
+                     measure = "Rel", 
+                     remove_orphan_terms = FALSE)
+
+# use the simplifyEnrichment tool to cluster the GO terms and plot results
+go_id_simplifiedF <- simplifyGO(mat = go_id_similarityMatrixF, 
+                               method = "binary_cut", 
+                               control = list(), 
+                               plot = TRUE, 
+                               column_title = "Female placenta depleted GO term semantic reduction",
+                               verbose = TRUE)
+```
+
+# semantic reduction of GO terms identified from female depleted genes
+```{r}
+# craete a similarity matrix of the GO terms 
+## make a vector of GO IDs
+go_id_vectorM <- placentaM_ordered_enriched$result$term_id %>%
+  as.vector()
+## create the similarity matrix
+go_id_similarityMatrixM <- GO_similarity(go_id_vectorM, 
+                     ont = "BP", 
+                     db = "org.Hs.eg.db", 
+                     measure = "Rel", 
+                     remove_orphan_terms = FALSE)
+
+# use the simplifyEnrichment tool to cluster the GO terms and plot results 
+go_id_simplifiedM <- simplifyGO(mat = go_id_similarityMatrixM, 
+                               method = "binary_cut", 
+                               control = list(), 
+                               plot = TRUE, 
+                               column_title = "GO terms",
+                               verbose = TRUE)
+```
+
+# export initial GO terms
+```{r}
+# female enriched GO terms export
+## make placentaF_ordered_enriched$result a df
+placentaF_enriched_export <- placentaF_ordered_enriched$result %>%
+  as.data.frame()
+## remove list column - parents
+placentaF_enriched_export <- placentaF_enriched_export[,-14]
+## export as a cvs
+write.csv(placentaF_enriched_export, file = file.path(projectDir, "placentaF_enrichedPathways_2.csv"))
+
+# male enriched GO terms export
+## make placentaF_ordered_enriched$result a df
+placentaM_enriched_export <- placentaM_ordered_enriched$result %>%
+  as.data.frame()
+## remove list column - parents
+placentaM_enriched_export <- placentaM_enriched_export[,-14]
+## export as a cvs
+write.csv(placentaM_enriched_export, file = file.path(projectDir, "placentaM_enrichedPathways.csv"))
+```
+

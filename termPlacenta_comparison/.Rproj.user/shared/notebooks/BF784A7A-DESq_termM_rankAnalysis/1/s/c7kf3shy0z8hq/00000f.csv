@@ -1,0 +1,2 @@
+"0","# replace gneeid with ensembl"
+"0","colnames(placenta_f_depleted_DESq) <- gsub(""geneid"", ""ensembl"", colnames(placenta_f_depleted_DESq))"

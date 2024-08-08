@@ -1,0 +1,206 @@
+---
+title: "DGEobject_DESq_oxy"
+output: html_document
+date: "2024-05-17"
+---
+
+# load libraries
+```{r}
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(DESeq2)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+library(IRanges)
+library(GenomicFeatures)
+
+# set project directory
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/oxygen_threshold/rawData"
+import_early_femaleF <- file.path(projectDir, "rawCounts_placentaF_early.csv")
+import_early_placentaM <- file.path(projectDir, "rawCounts_placentaM_early.csv")
+import__mid_placentaF <- file.path(projectDir, "rawCounts_placenta_f.csv")
+import_mid_placentaM <- file.path(projectDir, "rawCounts_placenta_m.csv")
+import_metaData_placenta <- file.path(projectDir, "metaData_placenta.csv")
+input_genome_gff3_file <- file.path(projectDir, "gencode.v29.chr_patch_hapl_scaff.annotation.gff3")
+```
+
+# import raw counts
+```{r}
+# import the counts tables
+# placentaF_early
+placentaF_early <- read_delim(file = import_early_femaleF,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+# placentaM_early
+placentaM_early <- read_delim(file = import_early_placentaM,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+# placentaF_mid
+placentaF_mid <- read_delim(file = import__mid_placentaF,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+# placentaM_mid
+placentaM_mid <- read_delim(file = import_mid_placentaM,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+# metaData
+metaData <- read_delim(file = import_metaData_placenta,
+                       col_names = TRUE,
+                       delim = ",") %>%
+  as.data.frame()
+```
+
+# import gencode
+```{r}
+# import the gencodev32_gff_inFile file
+all_gencode_v29 <- rtracklayer::import(input_genome_gff3_file)
+# this file contains more information than we need here
+# subset out only the columns we need
+gene_data <- data.frame(ensembl = all_gencode_v29@elementMetadata$gene_id,
+                        hgnc_symbol = all_gencode_v29@elementMetadata$gene_name,
+                        seqnames = all_gencode_v29@seqnames,
+                        gene_type = all_gencode_v29@elementMetadata$gene_type)
+# we're left with multiple identical rows, keep one each
+gencode_v29_gene_id_symbol_chr_biotype <- gene_data %>%
+  dplyr::distinct(., .keep_all = TRUE)
+# which leaves us with the following dimensions where there is a unique combination of ensembl ID, hgnc symbol and chromosome
+dim(gencode_v29_gene_id_symbol_chr_biotype) # 64837 3
+# this does however, leave us with duplicate ensembl IDs
+dim(gencode_v29_gene_id_symbol_chr_biotype[!duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl), ]) # 64792 3
+# after generating a table to see the duplicates I can see that this is an X/Y chromosome issue. All genes are assigned to both chromosomes
+duplicate_rows <- gencode_v29_gene_id_symbol_chr_biotype[duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl_gene_id) | duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl, fromLast = TRUE),]
+# remove duplicates (we don't use the chromosome information for anything)
+gencode <- gencode_v29_gene_id_symbol_chr_biotype[!duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl), ]
+```
+
+# merge countTables using dplyr outer join
+```{r}
+# merge countsTables to create total rawCounts df
+total_rawCounts_placenta <- dplyr::full_join(placentaF_early, placentaM_early, by = "ensembl") %>%
+  dplyr::full_join(.,placentaF_mid, by = "ensembl") %>%
+  dplyr::full_join(.,placentaM_mid, by = "ensembl") 
+
+# replace any NA values with zero
+total_rawCounts_placenta[is.na(total_rawCounts_placenta)] <- 0
+
+# subset gencode to only include protein coding genes
+gencode_protein <- dplyr::filter(gencode, gene_type == "protein_coding")
+
+# subset total rawCounts to only include protein coding genes
+## make ensembl row names
+total_rawCounts <- tibble::column_to_rownames(total_rawCounts_placenta, var = "ensembl")
+# filter for protein coding genes only
+rawCounts_protein <- subset(total_rawCounts, rownames(total_rawCounts) %in% gencode_protein$ensembl)
+```
+
+# correcting for batch effects
+```{r}
+# correct for batch effects before DESq2 normalisation and DGEobject creation 
+rawCounts_protein <- limma::removeBatchEffect(rawCounts_protein)
+```
+
+# DESq2 normalisation
+```{r}
+# create DESeq2 matrix
+DESq_rawCounts <- DESeqDataSetFromMatrix(countData = rawCounts_protein,
+                                  colData = metaData,
+                                  design = ~ tissue)
+
+# estimate size factors for normalisation
+dds <- estimateSizeFactors(DESq_rawCounts)
+
+# get normalised counts
+rawCounts_DESq <- counts(dds, normalized = TRUE)
+
+# convert normalised counts into CPM
+cpm_rawCounts_DESq <- cpm(rawCounts_DESq, log = FALSE)
+```
+
+# normalised vs unnormalised box plot
+```{r}
+# pre-plot process
+dge_unnorm <- total_rawCounts
+dge_norm <- rawCounts_DESq
+
+# box plot of normalised expression distribution 
+par(mfrow=c(1,2))
+lcpm_norm <- cpm(dge_norm, log=TRUE)
+boxplot(lcpm_norm, ylab="Log-cpm", las=2, col=blues9, main="Normalised data")
+```
+
+# create DGEobject out of DESq2 normalised counts
+```{r}
+cpm_dgelist_DESq <- edgeR::DGEList(
+  counts = rawCounts_DESq,
+  samples = metaData,
+  group = metaData$tissue,
+  genes = rownames(rawCounts_DESq))
+```
+
+# cpm avergage by sex_tissue 
+```{r}
+# use the edgeR built in function `cpm()` to make a new table of cpm counts
+cpms_sex <- edgeR::cpm(cpm_dgelist_DESq, log = FALSE)
+# use the cpms dataframe to grab all the ensembl IDs for the genes
+genes_to_average <- rownames(cpms_sex)
+# create a new object for the mean cpms
+# first step is to transform the matrix (flip it 90' so genes are now in the columns and samples are in the rows)
+mean_sex_tissue_cpms <- t(cpms_sex) %>%
+  # make sure you have a data frame
+  data.frame() %>%
+  # move the samplenames into a column (we need this to join the metadata table)
+  tibble::rownames_to_column("sampleID") %>%
+  # join the counts and the metadata table (but we only want the samplename and tissue columns for your data so we're subsetting using the square brackets)
+  dplyr::left_join(., cpm_dgelist_DESq$samples[, c("sampleID", "tissue", "sex")], by = join_by(sampleID)) %>%
+  # drop the samplename column again (it was added by the join)
+  dplyr::select(., -sampleID) %>%
+   # add a column
+  dplyr::mutate(sex_tissue = paste(sex, tissue, sep = "_")) %>%
+  # group by the column of interest. Here I've use the "sex_outcome" column but in your data it will be the "tissue" column
+  group_by(sex_tissue) %>%
+  # calculate the mean cpms of all genes (using the ensembl gene vector we made earlier)
+  dplyr::summarise_at(vars(genes_to_average), mean)
+```
+
+# subset sex_tissue into female and male dataframes
+```{r}
+# female 
+## subsetting data 
+mean_female_cpms <- subset(mean_sex_tissue_cpms, startsWith(sex_tissue, "female_")) 
+## exporting data
+write.csv(mean_female_cpms, file = file.path(projectDir, "mean_female_cpms_oxy_DESq.csv"))
+
+# male
+## subsetting data
+mean_male_cpms <- subset(mean_sex_tissue_cpms, startsWith(sex_tissue, "male_"))
+## exporting data
+write.csv(mean_male_cpms, file = file.path(projectDir, "mean_male_cpms_oxy_DESq.csv"))
+```
+
+# subset for mid_placenta and export df
+```{r}
+# select for rows ending in "_mid"
+mean_placenta_cpms <- subset(mean_sex_tissue_cpms, endsWith(sex_tissue, "_mid"))
+# export data
+write.csv(mean_placenta_cpms, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/sexSpecific_comparison/rawData/mean_placenta_cpms_DESq.csv"))
+```

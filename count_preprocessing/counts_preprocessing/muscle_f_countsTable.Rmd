@@ -1,0 +1,161 @@
+---
+title: "muscle_f"
+output: html_document
+date: "2024-05-01"
+---
+
+# load libraries and set project directory
+```{r}
+# load the relevant libraries 
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData"
+
+# set path for counts tables 
+import_SRR980476 <- file.path(projDir, "muscle_f/SRR980476__GRCh38_ReadsPerGene_counts.tab")
+import_SRR980486 <- file.path(projDir, "muscle_f/SRR980486__GRCh38_ReadsPerGene_counts.tab")
+import_SRR2156553 <- file.path(projDir, "muscle_f/SRR2156553__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3191757 <- file.path(projDir, "muscle_f/SRR3191757__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3192453 <- file.path(projDir, "muscle_f/SRR3192453__GRCh38_ReadsPerGene_counts.tab")
+import_SRR4421495 <- file.path(projDir, "muscle_f/SRR4421495__GRCh38_ReadsPerGene_counts.tab")
+import_SRR6847117 <- file.path(projDir, "muscle_f/SRR6847117__GRCh38_ReadsPerGene_counts.tab")
+```
+
+# import raw readCounts
+```{r}
+# import the counts tables
+## SRR980476
+SRR980476 <- read_delim(file = import_SRR980476,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR980476=X2)
+
+## SRR980486
+SRR980486 <- read_delim(file = import_SRR980486,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR980486=X2)
+
+## SRR2156553
+SRR2156553 <- read_delim(file = import_SRR2156553,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR2156553=X2)
+
+## SRR3191757
+SRR3191757 <- read_delim(file = import_SRR3191757,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3191757=X2)
+
+## SRR3192453
+SRR3192453 <- read_delim(file = import_SRR3192453,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3192453=X2)
+
+## SRR4421495
+SRR4421495 <- read_delim(file = import_SRR4421495,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR4421495=X2)
+
+## SRR6847117
+SRR6847117 <- read_delim(file = import_SRR6847117,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR6847117=X2)
+```
+
+# stitch samples together
+```{r}
+# join samples together 
+## left joins the sample column by the 'ensembl' column
+mergedCounts_muscle_f <- dplyr::left_join(SRR980476,SRR980486, by="ensembl") %>%
+  dplyr::left_join(.,SRR2156553, by="ensembl") %>%
+  dplyr::left_join(.,SRR3191757, by="ensembl") %>%
+  dplyr::left_join(.,SRR3192453, by="ensembl") %>%
+  dplyr::left_join(.,SRR4421495, by="ensembl") %>%
+  dplyr::left_join(.,SRR6847117, by="ensembl") 
+
+# remove rows with all zeros
+mergedCounts_muscle_f <- mergedCounts_muscle_f[rowSums(mergedCounts_muscle_f[,-1])>0,]
+
+# convert 'ensembl' column to row names 
+## ensure there are no row names first
+rownames(mergedCounts_muscle_f) <- NULL
+mergedCounts_muscle_f %<>% tibble::column_to_rownames("ensembl")
+```
+
+# library size scatter plot
+```{r}
+# create a small data frame with information for the plot
+plotCounts_muscle_f <- mergedCounts_muscle_f %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_muscle_f,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts female muscle") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in female muscle",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# create df excluding samples which FAIL library size threshold
+```{r}
+countsTable_muscle_f <- mergedCounts_muscle_f[,-7]
+```
+
+# output file
+```{r}
+write.csv(countsTable_muscle_f, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/combined_raw/rawCounts_muscle_f.csv"))
+```

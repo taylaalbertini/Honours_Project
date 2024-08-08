@@ -1,0 +1,217 @@
+---
+title: "liver_f"
+output: html_document
+date: "2024-05-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# load libraries and set project directory 
+```{r}
+# load the relevant libraries 
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData"
+
+# set path for counts tables 
+import_ERR2145293 <- file.path(projDir, "liver_f/ERR2145293__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145295 <- file.path(projDir, "liver_f/ERR2145295__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145301 <- file.path(projDir, "liver_f/ERR2145301__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145313 <- file.path(projDir, "liver_f/ERR2145313__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145318 <- file.path(projDir, "liver_f/ERR2145318__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145321 <- file.path(projDir, "liver_f/ERR2145321__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145322 <- file.path(projDir, "liver_f/ERR2145322__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145326 <- file.path(projDir, "liver_f/ERR2145326__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145327 <- file.path(projDir, "liver_f/ERR2145327__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145331 <- file.path(projDir, "liver_f/ERR2145331__GRCh38_ReadsPerGene_counts.tab")
+import_ERR2145333 <- file.path(projDir, "liver_f/ERR2145333__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3192439 <- file.path(projDir, "liver_f/SRR3192439__GRCh38_ReadsPerGene_counts.tab")
+import_SRR4421326 <- file.path(projDir, "liver_f/SRR4421326__GRCh38_ReadsPerGene_counts.tab")
+```
+
+# import raw readCounts
+```{r}
+# import the counts tables
+## ERR2145293
+ERR2145293 <- read_delim(file = import_ERR2145293,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145293=X2)
+
+## ERR2145295
+ERR2145295 <- read_delim(file = import_ERR2145295,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145295=X2)
+
+## ERR2145301
+ERR2145301 <- read_delim(file = import_ERR2145301,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145301=X2)
+
+## ERR2145313
+ERR2145313 <- read_delim(file = import_ERR2145313,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145313=X2)
+
+## ERR2145318
+ERR2145318 <- read_delim(file = import_ERR2145318,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145318=X2)
+
+## ERR2145321
+ERR2145321 <- read_delim(file = import_ERR2145321,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145321=X2)
+
+## ERR2145322
+ERR2145322 <- read_delim(file = import_ERR2145322,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145322=X2)
+
+## ERR2145326
+ERR2145326 <- read_delim(file = import_ERR2145326,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145326=X2)
+
+## ERR2145327
+ERR2145327 <- read_delim(file = import_ERR2145327,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145327=X2)
+
+## ERR2145331
+ERR2145331 <- read_delim(file = import_ERR2145331,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145331=X2)
+
+## ERR2145333
+ERR2145333 <- read_delim(file = import_ERR2145333,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR2145333=X2)
+
+## SRR3192439
+SRR3192439 <- read_delim(file = import_SRR3192439,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3192439=X2)
+
+## SRR4421326
+SRR4421326 <- read_delim(file = import_SRR4421326,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR4421326=X2)
+```
+
+# stitch samples together
+```{r}
+# join samples together 
+## left joins the sample column by the 'ensembl' column
+mergedCounts_liver_f <- dplyr::left_join(ERR2145293,ERR2145295, by="ensembl") %>%
+  dplyr::left_join(.,ERR2145301, by="ensembl") %>%
+  dplyr::left_join(.,ERR2145313, by="ensembl") %>%
+  dplyr::left_join(.,ERR2145318, by="ensembl") %>%
+  dplyr::left_join(.,ERR2145321, by="ensembl") %>%
+  dplyr::left_join(.,ERR2145322, by="ensembl") %>%
+  dplyr::left_join(.,ERR2145326, by="ensembl") %>%
+  dplyr::left_join(.,ERR2145327, by="ensembl") %>%
+  dplyr::left_join(.,ERR2145331, by="ensembl") %>%
+  dplyr::left_join(.,ERR2145333, by="ensembl") %>%
+  dplyr::left_join(.,SRR3192439, by="ensembl") %>%
+  dplyr::left_join(.,SRR4421326, by="ensembl") 
+
+# remove rows with all zeros
+mergedCounts_liver_f <- mergedCounts_liver_f[rowSums(mergedCounts_liver_f[,-1])>0,]
+
+# convert 'ensembl' column to row names 
+## ensure there are no row names first
+rownames(mergedCounts_liver_f) <- NULL
+mergedCounts_liver_f %<>% tibble::column_to_rownames("ensembl")
+```
+
+# library size scatter plot
+```{r}
+# create a small data frame with information for the plot
+plotCounts_liver_f <- mergedCounts_liver_f %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_liver_f,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts female liver") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in female liver",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# output file
+```{r}
+write.csv(mergedCounts_liver_f, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/combined_raw/rawCounts_liver_f.csv"))
+```
+
+
+

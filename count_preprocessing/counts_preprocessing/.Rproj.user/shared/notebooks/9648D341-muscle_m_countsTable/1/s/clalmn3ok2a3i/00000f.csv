@@ -1,0 +1,8 @@
+"0","mergedCounts_muscle_m <- dplyr::left_join(SRR3191758,SRR3192454, by=""ensembl"") %>%"
+"0","  dplyr::left_join(.,SRR4421494, by=""ensembl"") %>%"
+"0","  dplyr::left_join(.,SRR6847109, by=""ensembl"") %>%"
+"0","  dplyr::left_join(.,SRR9887771, by=""ensembl"")"
+"0",""
+"0","# remove rows with all zeros"
+"0","mergedCounts_muscle_m <- mergedCounts_muscle_m[rowSums(mergedCounts_muscle_m[,-1])>0,]"
+"0","rownames(mergedCounts_muscle_m) <- NULL"

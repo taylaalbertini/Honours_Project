@@ -1,0 +1,20 @@
+"0","# import male placenta depleted table and make into a data frame
+placentaM_depleted <- read_delim(import_placentaM_depleted,
+                                 col_names = TRUE,
+                                 delim = "","") %>%
+  as.data.frame()
+"
+"1","[1m[22mNew names:
+[36m•[39m `` -> `...1`
+"
+"1","[1mRows: [22m[34m7[39m [1mColumns: [22m[34m12[39m
+"
+"1","[36m──[39m [1mColumn specification[22m [36m──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────[39m
+[1mDelimiter:[22m "",""
+[31mchr[39m (5): ensembl, tissue_TMM, tissue_DESq, hgnc_symbol, description
+[32mdbl[39m (7): ...1, nCPM_1_TMM, nCPM_male_placenta_TMM, nCPM_ratio_TMM, nCPM_1_DESq, nCPM_male_placenta_DESq, nCPM_ratio_DESq
+"
+"1","
+[36mℹ[39m Use `spec()` to retrieve the full column specification for this data.
+[36mℹ[39m Specify the column types or set `show_col_types = FALSE` to quiet this message.
+"

@@ -1,0 +1,299 @@
+---
+title: "brain_f"
+output: html_document
+date: "2024-05-01"
+---
+
+# load libraries and set project directory 
+```{r}
+# load the relevant libraries
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set up project directory 
+projDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData"
+
+# set path for counts tables 
+import_ERR1473006 <- file.path(projDir, "brain_f/ERR1473006__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473007 <- file.path(projDir, "brain_f/ERR1473007__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473009 <- file.path(projDir, "brain_f/ERR1473009__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473010 <- file.path(projDir, "brain_f/ERR1473010__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473059 <- file.path(projDir, "brain_f/ERR1473059__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473060 <- file.path(projDir, "brain_f/ERR1473060__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473061 <- file.path(projDir, "brain_f/ERR1473061__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473064 <- file.path(projDir, "brain_f/ERR1473064__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473067 <- file.path(projDir, "brain_f/ERR1473067__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473070 <- file.path(projDir, "brain_f/ERR1473070__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473071 <- file.path(projDir, "brain_f/ERR1473071__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473073 <- file.path(projDir, "brain_f/ERR1473073__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473076 <- file.path(projDir, "brain_f/ERR1473076__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473078 <- file.path(projDir, "brain_f/ERR1473078__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473079 <- file.path(projDir, "brain_f/ERR1473079__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473080 <- file.path(projDir, "brain_f/ERR1473080__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473081 <- file.path(projDir, "brain_f/ERR1473081__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473082 <- file.path(projDir, "brain_f/ERR1473082__GRCh38_ReadsPerGene_counts.tab")
+import_ERR1473083 <- file.path(projDir, "brain_f/ERR1473083__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3625894 <- file.path(projDir, "brain_f/SRR3625894__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3626528 <- file.path(projDir, "brain_f/SRR3626528__GRCh38_ReadsPerGene_counts.tab")
+import_SRR3626531 <- file.path(projDir, "brain_f/SRR3626531__GRCh38_ReadsPerGene_counts.tab")
+```
+
+# import the raw readCounts
+```{r}
+# import the counts tables for each female brain sample
+## ERR1473006
+ERR1473006 <- read_delim(file = import_ERR1473006, 
+                         ### the table does not contain column names
+                         col_names = FALSE,
+                         ### separated by tabs
+                         delim = "\t") %>% 
+  ### makes it a data frame 
+  as.data.frame() %>% 
+  ### makes the column names 'ensembl' for the ensemble IDs and sample name 'ERR1473006' for the column containing gene counts
+  dplyr::select(ensembl=X1,ERR1473006=X2)
+
+## ERR1473007
+ERR1473007 <- read_delim(file = import_ERR1473007,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473007=X2)
+
+## ERR1473009
+ERR1473009 <- read_delim(file = import_ERR1473009,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473009=X2)
+
+## ERR1473010
+ERR1473010 <- read_delim(file = import_ERR1473010,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473010=X2)
+
+## ERR1473059
+ERR1473059 <- read_delim(file = import_ERR1473059,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473059=X2)
+
+## ERR1473060
+ERR1473060 <- read_delim(file = import_ERR1473060,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473060=X2)
+
+## ERR1473061
+ERR1473061 <- read_delim(file = import_ERR1473061,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473061=X2)
+
+## ERR1473064
+ERR1473064 <- read_delim(file = import_ERR1473064,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473064=X2)
+
+## ERR1473067
+ERR1473067 <- read_delim(file = import_ERR1473067,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473067=X2)
+
+## ERR1473070
+ERR1473070 <- read_delim(file = import_ERR1473070,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473070=X2)
+
+## ERR1473071
+ERR1473071 <- read_delim(file = import_ERR1473071,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473071=X2)
+
+## ERR1473073
+ERR1473073 <- read_delim(file = import_ERR1473073,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473073=X2)
+
+## ERR1473076
+ERR1473076 <- read_delim(file = import_ERR1473076,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473076=X2)
+
+## ERR1473078
+ERR1473078 <- read_delim(file = import_ERR1473078,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473078=X2)
+
+## ERR1473079
+ERR1473079 <- read_delim(file = import_ERR1473079,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473079=X2)
+
+## ERR1473080
+ERR1473080 <- read_delim(file = import_ERR1473080,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473080=X2)
+
+## ERR1473081
+ERR1473081 <- read_delim(file = import_ERR1473081,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473081=X2)
+
+## ERR1473082
+ERR1473082 <- read_delim(file = import_ERR1473082,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473082=X2)
+
+## ERR1473083
+ERR1473083 <- read_delim(file = import_ERR1473083,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,ERR1473083=X2)
+
+## SRR3625894
+SRR3625894 <- read_delim(file = import_SRR3625894,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3625894=X2)
+
+## SRR3626528
+SRR3626528 <- read_delim(file = import_SRR3626528,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3626528=X2)
+
+## SRR3626531
+SRR3626531 <- read_delim(file = import_SRR3626531,
+                         col_names = FALSE,
+                         delim = "\t") %>%
+  as.data.frame() %>%
+  dplyr::select(ensembl=X1,SRR3626531=X2)
+```
+
+# stitch each female brain sample count table together
+```{r}
+# join samples together
+## left joins the sample column by the 'ensembl' column 
+mergedCounts_brain_f <- dplyr::left_join(ERR1473006,ERR1473007, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473009, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473010, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473059, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473060, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473061, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473064, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473067, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473070, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473071, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473073, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473076, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473078, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473079, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473080, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473081, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473082, by="ensembl") %>%
+  dplyr::left_join(.,ERR1473083, by="ensembl") %>%
+  dplyr::left_join(.,SRR3625894, by="ensembl") %>%
+  dplyr::left_join(.,SRR3626528, by="ensembl") %>%
+  dplyr::left_join(.,SRR3626531, by="ensembl")
+
+# remove rows with all zeros
+mergedCounts_brain_f <- mergedCounts_brain_f[rowSums(mergedCounts_brain_f[,-1])>0,]
+
+# convert 'ensembl' column to row names 
+## ensure there are no row names first
+rownames(mergedCounts_brain_f) <- NULL
+mergedCounts_brain_f %<>% tibble::column_to_rownames("ensembl")
+```
+
+# library size scatter plot
+```{r}
+# create a small data frame with information for the plot - sample name and total counts 
+plotCounts_brain_f <- mergedCounts_brain_f %>%
+  colSums(.) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column() %>%
+  set_colnames(c("sample", "totalCounts")) %>%
+  arrange(., totalCounts)
+
+# make the plot
+ggplot(data = plotCounts_brain_f,
+       aes(x=reorder(sample, totalCounts),
+           y=totalCounts,
+           colour=totalCounts<9000000)) +
+
+  geom_point(size=5) +
+  scale_colour_manual(name='Read count\nthreshold',
+                      values=setNames(c('red','green'),
+                                      c(TRUE, FALSE))) +
+
+  geom_hline(yintercept=9000000,
+             show.legend=FALSE,
+             linetype="dotted",
+             colour="red") +
+
+
+  ggtitle("Raw counts female brain") +
+  theme_bw(base_size=16) +
+  labs(title="Library size",
+       subtitle="Raw mRNA read counts in female brain",
+       x="Sample name",
+       y="mRNA read counts") +
+  
+  theme(axis.text.x=element_text(angle=270,
+                                 hjust=1.5,
+                                 colour="black",
+                                 size=12),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14))
+```
+
+# output file
+```{r}
+write.csv(mergedCounts_brain_f, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/combined_raw/rawCounts_brain_f.csv"))
+```
+
+
+
+
