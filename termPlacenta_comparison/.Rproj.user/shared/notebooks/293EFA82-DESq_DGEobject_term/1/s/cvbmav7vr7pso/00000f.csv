@@ -1,2 +1,0 @@
-"0","# correct for batch effects before DESq2 normalisation and DGEobject creation "
-"0","rawCounts_protein <- limma::removeBatchEffect(rawCounts_protein)"

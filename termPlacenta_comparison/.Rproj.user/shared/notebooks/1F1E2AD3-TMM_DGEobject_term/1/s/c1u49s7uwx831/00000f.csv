@@ -1,9 +1,0 @@
-"0","# import the gencodev32_gff_inFile file"
-"0","all_gencode_v29 <- rtracklayer::import(input_genome_gff3_file)"
-"2","Warning in open.connection(con, open) :"
-"2","
- "
-"2"," cannot open file '/Users/taylaalbertini/Desktop/R studio/honours_project/termPlacenta_comparison/rawData/gencode.v29.chr_patch_hapl_scaff.annotation.gff3': No such file or directory
-"
-"2","Error in open.connection(con, open) : cannot open the connection
-"
