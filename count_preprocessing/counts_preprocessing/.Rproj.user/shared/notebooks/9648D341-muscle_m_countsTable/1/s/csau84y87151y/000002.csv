@@ -1,9 +1,0 @@
-"0","# import the counts tables"
-"0","## SRR3191758"
-"0","SRR3191758 <- read_delim(file = import_SRR3191758,"
-"0","                         col_names = FALSE,"
-"0","                         delim = ""\t"") %>%"
-"0","  as.data.frame() %>%"
-"0","  dplyr::select(ensembl=X1,SRR3191758=X2)"
-"2","Error: '/Users/taylaalbertini/Desktop/R studio/honours_project/count_preprocessing/rawData/muscle_m/SRR3191758_GRCh38_ReadsPerGene_counts.tab' does not exist.
-"

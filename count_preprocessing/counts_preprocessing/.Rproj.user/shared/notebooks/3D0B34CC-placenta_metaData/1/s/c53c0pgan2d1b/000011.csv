@@ -1,8 +1,0 @@
-"0","# "
-"0","placenta_metaData <- read_delim(file = import_placenta_metaData,"
-"0","                                col_names = FALSE,"
-"0","                                delim = ""\t"") %>%"
-"0","  as.data.frame() %>%"
-"0","  dplyr::select(sample=X1,gestationalAge=X2,fetalSex=X3,maternalAge=X4,gestationalAge=X5,BMI=X6,smoker=X7,ethnicity=X8)"
-"2","Error: '/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/count_preprocessing/rawData/placenta_metaData.csv' does not exist.
-"

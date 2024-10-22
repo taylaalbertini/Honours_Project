@@ -1,2 +1,0 @@
-"0","write.csv(mergedCounts_placenta_m, file = file.path(projDir,"
-"0","                                                 ""combined_raw/rawCounts_placenta_m.csv""))"

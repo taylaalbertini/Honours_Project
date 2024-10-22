@@ -1,4 +1,0 @@
-"0","write.csv(countsTable_heart_f, file = file.path(projDir,"
-"0","                                                 ""combined_raw/rawCounts_heart_f.csv""))"
-"2","Error in eval(expr, p) : object 'countsTable_heart_f' not found
-"

@@ -1,5 +1,0 @@
-"0","write.csv(mergedCounts_brain_m, file = file.path(""/Users/taylaalbertini/Desktop/R studio/honours_project/readCounts_analysis/combined_raw/combined_raw/rawCounts_brain_m.csv""))"
-"2","Warning: cannot open file '/Users/taylaalbertini/Desktop/R studio/honours_project/readCounts_analysis/combined_raw/combined_raw/rawCounts_brain_m.csv': No such file or directory"
-"2","Error in file(file, ifelse(append, ""a"", ""w"")) : 
-  cannot open the connection
-"
