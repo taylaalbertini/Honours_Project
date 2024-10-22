@@ -1,9 +1,0 @@
-"0","# setting column names"
-"0","column_names <- c(""barcode"", ""in_tissue"", ""array_row"", ""array_col"", ""pxl_row_in_fullres"", ""pxl_col_in_fullers"")"
-"0",""
-"0","#read the tissue position info into R"
-"0","pos_info <- read_delim(file = import_tissue_pos,"
-"0","                       col_names = column_names,"
-"0","                       delim = "","")"
-"2","Error in (function (srcref)  : unimplemented type (29) in 'eval'
-"
