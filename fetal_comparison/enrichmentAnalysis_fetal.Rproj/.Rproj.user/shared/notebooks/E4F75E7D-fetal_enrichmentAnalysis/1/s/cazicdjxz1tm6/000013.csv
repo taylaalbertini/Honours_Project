@@ -1,6 +1,0 @@
-"0","# perform enrichment analysis on ordered genes
-placentaF_ordered_enriched <- gost(placentaF_ordered$ENSEMBL, organism = ""hsapiens"",
-                                   ordered_query = TRUE)
-"
-"2","Missing query
-"
