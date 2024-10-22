@@ -151,3 +151,5 @@ placentaF_depleted_annotated_2 <- dplyr::select(placentaF_depleted_annotated_2, 
 ```{r}
 write.csv(placentaF_depleted_annotated_2, file = file.path(projectDir, "early_placentaF_depleted_annotated.csv"))
 ```
+
+

@@ -58,7 +58,7 @@ ncpms_female_2 <- t(ncpms_female) %>%
 ## remove placenta counts
 ncpms_female_2 <- ncpms_female_2[,-2]
 ## rename column names
-colnames(ncpms_female_2) <- gsub("X2", "Female Placenta (mid-gestation)", colnames(ncpms_female_2))
+colnames(ncpms_female_2) <- gsub("X2", "Mid-gestation Placenta (Female)", colnames(ncpms_female_2))
 ## remove sex_tissue row
 ncpms_female_2 <- ncpms_female_2[-1,]
 
@@ -70,15 +70,16 @@ heat_plot <- dplyr::left_join(depleted_placentaF, ncpms_female_2, by = join_by(e
 
 # tidy 
 ## replace placenta colname 
-colnames(heat_plot) <- gsub("nCPM_early_placenta_TMM", "Female Placenta (early-gestation)", colnames(heat_plot))
+colnames(heat_plot) <- gsub("nCPM_early_placenta_TMM", "Early-gestation Placenta (Female)", colnames(heat_plot))
 ## put ncpms in descending order
-heat_plot_ordered <- heat_plot[order(heat_plot$`Female Placenta (early-gestation)`, decreasing = TRUE),]
+heat_plot_ordered <- heat_plot[order(heat_plot$`Early-gestation Placenta (Female)`, decreasing = TRUE),]
 ## make heat_plot_ordered numeric
-heat_plot_ordered$`Female Placenta (mid-gestation)` <- as.numeric(heat_plot_ordered$`Female Placenta (mid-gestation)`)
+heat_plot_ordered$`Mid-gestation Placenta (Female)` <- as.numeric(heat_plot_ordered$`Mid-gestation Placenta (Female)`)
 ## change order so that placenta is last
-heat_plot_ordered <- dplyr::relocate(heat_plot_ordered, `Female Placenta (early-gestation)`, .after = `Female Placenta (mid-gestation)`)
+heat_plot_ordered <- dplyr::relocate(heat_plot_ordered, `Early-gestation Placenta (Female)`, .after = `Mid-gestation Placenta (Female)`)
 rownames(heat_plot_ordered) <- NULL
 pheat_plot <- tibble::column_to_rownames(heat_plot_ordered, var = "ensembl")
+write.csv(pheat_plot, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/libsize/earlyF_pheat.csv"))
 
 # complex heatmap
 library(ComplexHeatmap)
@@ -94,9 +95,9 @@ mat <- as.matrix(pheat_plot)
 column_split_vector <- c(rep("Group 1", 1), "Group 2")
 
 ## craete box plot annotation
-column_ha <- HeatmapAnnotation(`log10 (nCPMs)` = anno_boxplot(log10(mat), which = c("column"), height = unit(4, "cm")))
+column_ha <- HeatmapAnnotation(`log10 (nCPMs)` = anno_boxplot(log10(mat), which = c("column"), height = unit(4, "cm")), annotation_name_side = "left")
 ## set the colour for the range -4 to 4
-color_mapping <- colorRamp2(c(-4, 0, 4), c("blue", "white", "red"))
+color_mapping <- colorRamp2(c(-2, 1, 4), c("blue", "white", "red"))
 
 ## print heatmap with annotation
 heatmapF <- Heatmap(log10(mat), 
@@ -107,7 +108,7 @@ heatmapF <- Heatmap(log10(mat),
         row_title = "Genes", 
         row_title_gp = gpar(fontsize = 12),
         show_row_names = FALSE,
-        column_names_rot = 45,
+        show_column_names = FALSE,
         column_names_gp = gpar(fontsize = 10),
         cluster_rows = FALSE,
         cluster_columns = FALSE,
@@ -120,68 +121,10 @@ heatmapF <- Heatmap(log10(mat),
 heatmapF
 
 # export heatmap as jpeg 
-path_save <- "/Users/taylaalbertini/Desktop/R studio/honours_project/oxygen_threshold/analysis/heatmaps/earlyF_depleted_heatmap.jpeg"
+path_save <- "/Users/taylaalbertini/Desktop/earlyF_depleted_heatmap.jpeg"
 
 jpeg(path_save, width = 4000, height = 3500, res = 400)
 draw(heatmapF)
 dev.off()
-```
-
-# scatter plots
-```{r}
-# read in annotated data
-annot_depleted <- read_delim(file = file.path(projectDir, "early_placentaF_depleted_annotated.csv"),
-                             col_names = TRUE,
-                             delim = ",") %>%
-  as.data.frame() %>%
-  ## remove the first column "...1" that;s input when the file is imported
-  dplyr::select(., -...1)
-
-# make an effect size column
-#annot_depleted$effect_size <- annot_depleted$nCPM_5_TMM - annot_depleted$nCPM_placenta_TMM
-
-# subset annot_depleted to include hgnc symbols, TMM normalised ncpms and nCPM_ratio_TMM
-scatter <- dplyr::select(annot_depleted, hgnc_symbol, nCPM_early_placenta_TMM, nCPM_ratio_TMM)
-
-# order by nCPM_ratio_TMM - descending 
-scatter_ordered <- scatter[order(scatter$nCPM_ratio_TMM, decreasing = TRUE),]
-
-# convert hgnc_symbol from a column to row names 
-rownames(scatter_ordered) <- NULL
-scatter_plot <- tibble::column_to_rownames(scatter_ordered, var = "hgnc_symbol")
-
-# create a scatter plot where x-axis = nCPMs and y-axis = nCPM_ratio using ggplot2
-library(ggrepel)
-ggplot(data = scatter_plot,
-       aes(x = nCPM_early_placenta_TMM,
-           y = nCPM_ratio_TMM)) +
-  geom_point(#size = scatter_plot$effect_size * 0.05,
-             color = "black",
-             shape = 1) +
-  #ggtitle("Depleted female early gestation placental transcripts compared with mid-gestation") +
-  #scale_size_continuous(name = "Effect size", range = c(1, 2)) +
-  labs(x = "Normalised Counts Per Million", 
-       y = "nCPM(rank=1)/nCPM(rank=2)") +
-  ## set the y-axis numbers shown
-  scale_y_continuous(breaks = c(pretty(range(scatter_plot$y)), 3, 100, 200, 300, 400, 500)) +
-  
-  ## ensures the y-axis starts at 0
-  coord_cartesian(ylim = c(0, max(scatter_plot$nCPM_ratio_TMM) * 1.1), expand = FALSE) +
-  
-  geom_text_repel(data = subset(scatter_plot, nCPM_ratio_TMM > 20), ## annotates/labels the ten-greatest nCPM ratio genes 
-            aes(label = rownames(subset(scatter_plot, nCPM_ratio_TMM > 20))),
-            nudge_y = 50,
-            size          = 2.5,
-            box.padding   = 1.5,
-            point.padding = 0.5,
-            force         = 100,
-            segment.size  = 0.2,
-            segment.color = "grey50",
-            direction     = "x",
-            max.overlaps = 11) +
-  
-  theme_bw() + ## sets the plot background theme to black and white
-  theme(plot.title = element_text(size = 10)) 
-ggsave("earlyfemaleplot.png", width = 7, height = 7, units = "in") ## exported the last graph printed
 ```
 

@@ -72,7 +72,8 @@ placentaM_ordered <- placentaM_depleted[order(placentaM_depleted$nCPM_5_TMM, dec
 # perform GO enrichment on ordered genes
 placentaM_ordered_enriched <- gost(placentaM_ordered$ensembl, organism = "hsapiens",
                                    ordered_query = TRUE,
-                                   correction_method = "fdr")
+                                   correction_method = "fdr",
+                                   sources = c("GO:MF", "GO:CC", "GO:BP"))
 
 # print the enriched terms to visualise initial GO terms before applying semantic reduction
 head(placentaM_ordered_enriched$result, 16)
@@ -118,7 +119,7 @@ go_id_simplifiedF <- simplifyGO(mat = go_id_similarityMatrixF,
                                verbose = TRUE)
 ```
 
-# semantic reduction of GO terms identified from female depleted genes
+# semantic reduction of GO terms identified from male depleted genes
 ```{r}
 # craete a similarity matrix of the GO terms 
 ## make a vector of GO IDs
@@ -161,3 +162,75 @@ placentaM_enriched_export <- placentaM_enriched_export[,-14]
 write.csv(placentaM_enriched_export, file = file.path(projectDir, "placentaM_enrichedPathways.csv"))
 ```
 
+# rrvgo reduce redundancy of (female) human GO terms
+```{r}
+#BiocManager::install("rrvgo")
+library(rrvgo)
+library(ComplexHeatmap)
+
+# GO analysis
+simMatrix <- calculateSimMatrix(placentaF_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "CC",
+                                method = "Rel")
+
+scores <- setNames(-log10(placentaF_ordered_enriched$result$p_value), placentaF_ordered_enriched$result$term_id)
+reducedTerms <- reduceSimMatrix(simMatrix,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+
+heatmapPlot(simMatrix,
+            reducedTerms,
+            annotateParent=TRUE,
+            annotationLabel="parentTerm",
+            fontsize=6,
+            #show_colnames = FALSE,
+            #show_rownames = FALSE,
+            fontsize_col = 2,
+            fontsize_row = 2)
+
+scatterPlot(simMatrix, reducedTerms)
+
+treemapPlot(reducedTerms)
+
+# prelim plot of parent GO terms and number of associations 
+reduced <- dplyr::select(reducedTerms, parent, parentTerm, size)
+plot <- ggplot(reduced, aes(x = reorder(parentTerm, -size), y = size, fill = parentTerm)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "GO Term", y = "Number of Associations", title = "Number of Associations per GO Term") +
+  theme(legend.text=element_text(size=6)) +
+  theme_bw()
+plot
+```
+
+# rrvgo reduce redundancy of (male) human GO terms
+```{r}
+# create a similarity matrix of the GO ids
+simMatrixM <- calculateSimMatrix(placentaM_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "BP",
+                                method = "Rel")
+# set scores 
+scores <- setNames(-log10(placentaM_ordered_enriched$result$p_value), placentaM_ordered_enriched$result$term_id)
+# reduce terms based on the similarity matrix 
+reducedTermsM <- reduceSimMatrix(simMatrixM,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+# plot reduced GO terms in a heatmap for visualisation
+heatmapPlot(simMatrixM,
+            reducedTermsM,
+            annotateParent=TRUE,
+            annotationLabel="parentTerm",
+            fontsize=6,
+            #show_colnames = FALSE,
+            #show_rownames = FALSE,
+            fontsize_col = 6,
+            fontsize_row = 6)
+
+scatterPlot(simMatrixM, reducedTermsM)
+
+treemapPlot(reducedTermsM)
+```

@@ -1,0 +1,602 @@
+---
+title: "female_enrichment"
+output: html_document
+date: "2024-08-26"
+---
+
+# load libraries and set project directory 
+```{r}
+# load relevant libraries 
+library(ggkegg)
+library(tidygraph)
+library(scatterpie)
+library(dplyr)
+library(readxl)
+library(readr)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(clusterProfiler)
+library(enrichplot)
+library(stringr)
+library(magrittr)
+library(RColorBrewer)
+library(gprofiler2)
+library(forcats)
+
+# set project directory
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/rawData"
+
+# set path for depleted gene tables 
+import_placentaF_depleted <- file.path(projectDir, "placentaF_depleted_annotated.csv")
+import_placentaM_depleted <- file.path(projectDir, "placentaM_depleted_annotated.csv")
+```
+
+# import depleted gene tables 
+```{r}
+# import placenta female depleted table and make it into a data frame
+placentaF_depleted <- read_delim(import_placentaF_depleted,
+                                 col_names = TRUE,
+                                 delim = ",") %>%
+  as.data.frame() %>%
+  ## tidy placentaF_depleted - remove the "...1" column
+  dplyr::select(., -...1)
+
+# import male placenta depleted table and make into a data frame
+placentaM_depleted <- read_delim(import_placentaM_depleted,
+                                 col_names = TRUE,
+                                 delim = ",") %>%
+  as.data.frame() %>%
+  ## tidy placentaM_depleted - remove the "...1" column
+  dplyr::select(., -...1)
+```
+
+# GO functional enrichment analysis using gprofiler2 on female placenta depleted genes 
+```{r}
+# order genes by nCPM_ratio_TMM
+placentaF_ordered <- placentaF_depleted[order(placentaF_depleted$nCPM_ratio_TMM, decreasing = TRUE),]
+
+# perform GO enrichment analysis on ordered genes
+placentaF_ordered_enriched <- gost(placentaF_ordered$ensembl, organism = "hsapiens",
+                                   ordered_query = TRUE,
+                                   correction_method = "fdr",
+                                   evcodes = TRUE)
+
+# print the enriched terms to visualise initial GO terms before semantic reduction 
+head(placentaF_ordered_enriched$result, 30)
+
+# investigate which genes were enriched in fatty acid oxidation related GO terms
+go_term_of_interest <- "regulation of fatty acid beta-oxidation"
+enriched_row <- placentaF_ordered_enriched$result[placentaF_ordered_enriched$result$term_name == go_term_of_interest, ]
+print(enriched_row$intersection)
+```
+
+# GO functional enrichment analysis using gprofiler2 on male placenta depleted genes 
+```{r}
+# order genes by nCPM_ratio_TMM 
+placentaM_ordered <- placentaM_depleted[order(placentaM_depleted$nCPM_5_TMM, decreasing = TRUE),]
+
+# perform GO enrichment on ordered genes
+placentaM_ordered_enriched <- gost(placentaM_ordered$ensembl, organism = "hsapiens",
+                                   ordered_query = TRUE,
+                                   correction_method = "fdr",
+                                   evcodes = TRUE)
+
+# print the enriched terms to visualise initial GO terms before applying semantic reduction
+head(placentaM_ordered_enriched$result, 16)
+
+# investigate which genes were enriched in fatty acid oxidation related GO terms
+go_term_of_interest <- "monocarboxylic acid binding"
+enriched_row <- placentaM_ordered_enriched$result[placentaM_ordered_enriched$result$term_name == go_term_of_interest, ]
+print(enriched_row$intersection)
+```
+
+# rrvgo reduce redundancy of (female) human GO terms
+```{r}
+#BiocManager::install("rrvgo")
+library(rrvgo)
+library(ComplexHeatmap)
+
+# BP 
+## create similarity matrix for GO terms of BP source
+simMatrix_BP <- calculateSimMatrix(placentaF_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "BP",
+                                method = "Rel")
+## set scores
+scores <- setNames(-log10(placentaF_ordered_enriched$result$p_value), placentaF_ordered_enriched$result$term_id)
+## reduce the number of terms based on the similarity matrix for BP terms
+reducedTerms_BP <- reduceSimMatrix(simMatrix_BP,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+## add the source to table
+reducedTerms_BP$source <- "BP"
+
+# MF 
+## create similarity matrix for GO terms of MF source
+simMatrix_MF <- calculateSimMatrix(placentaF_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "MF",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for MF terms
+reducedTerms_MF <- reduceSimMatrix(simMatrix_MF,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+## add the source to table
+reducedTerms_MF$source <- "MF"
+
+# CC 
+## create similarity matrix for GO terms of CC source
+simMatrix_CC <- calculateSimMatrix(placentaF_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "CC",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for CC terms
+reducedTerms_CC <- reduceSimMatrix(simMatrix_CC,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+## add the source to table
+reducedTerms_CC$source <- "CC"
+
+
+# visualisation of the reduced terms
+## heatmap plot
+heatmapPlot(simMatrix_BP,
+            reducedTerms,
+            annotateParent=TRUE,
+            annotationLabel="parentTerm",
+            fontsize=6,
+            #show_colnames = FALSE,
+            #show_rownames = FALSE,
+            fontsize_col = 2,
+            fontsize_row = 2)
+
+## scatter plot
+scatterPlot(simMatrix, reducedTerms)
+## treemap plot
+treemapPlot(reducedTerms)
+
+# prelim barplot of parent GO terms and number of associations 
+reduced <- dplyr::select(reducedTerms, parent, parentTerm, size)
+plot <- ggplot(reduced, aes(x = reorder(parentTerm, -size), y = size, fill = parentTerm)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "GO Term", y = "Number of Associations", title = "Number of Associations per GO Term") +
+  theme(legend.text=element_text(size=6)) +
+  theme_bw()
+plot
+```
+
+# rrvgo reduce redundancy of (male) human GO terms
+```{r}
+# BP 
+## create similarity matrix for GO terms of BP source
+simMatrixM_BP <- calculateSimMatrix(placentaM_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "BP",
+                                method = "Rel")
+## set scores
+scoresM <- setNames(-log10(placentaM_ordered_enriched$result$p_value), placentaM_ordered_enriched$result$term_id)
+## reduce the number of terms based on the similarity matrix for BP terms
+reducedTermsM_BP <- reduceSimMatrix(simMatrixM_BP,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresM)
+## add the source to table
+reducedTermsM_BP$source <- "BP"
+
+# MF 
+## create similarity matrix for GO terms of MF source
+simMatrixM_MF <- calculateSimMatrix(placentaM_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "MF",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for MF terms
+reducedTermsM_MF <- reduceSimMatrix(simMatrixM_MF,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresM)
+## add the source to table
+reducedTermsM_MF$source <- "MF"
+
+# CC 
+## create similarity matrix for GO terms of CC source
+simMatrixM_CC <- calculateSimMatrix(placentaM_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "CC",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for CC terms
+reducedTermsM_CC <- reduceSimMatrix(simMatrixM_CC,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresM)
+## add the source to table
+reducedTermsM_CC$source <- "CC"
+```
+
+# bar graph visualisation
+```{r}
+# create a table of reduced terms 
+reduced_BP <- dplyr::select(reducedTerms_BP, parent, parentTerm, size, source)
+reduced_MF <- dplyr::select(reducedTerms_MF, parent, parentTerm, size, source)
+reduced_CC <- dplyr::select(reducedTerms_CC, parent, parentTerm, size, source)
+reducedM_BP <- dplyr::select(reducedTermsM_BP, parent, parentTerm, size, source)
+reducedM_MF <- dplyr::select(reducedTermsM_MF, parent, parentTerm, size, source)
+reducedM_CC <- dplyr::select(reducedTermsM_CC, parent, parentTerm, size, source)
+
+# merge tables
+reducedTerms_female <- rbind(reduced_BP, reduced_MF) %>% 
+  rbind(., reduced_CC) %>%
+  group_by(parentTerm, source) %>%
+  summarise(size = sum(size), .groups = 'drop')
+## save female reduced term table
+write.csv(reducedTerms_female, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/reducedTerms_female.csv"))
+
+reducedTerms_male <- rbind(reducedM_BP, reducedM_MF) %>% 
+  rbind(., reducedM_CC) %>%
+  group_by(parentTerm, source) %>%
+  summarise(size = sum(size), .groups = 'drop')
+## save male reduced term table
+write.csv(reducedTerms_male, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/reducedTerms_male.csv"))
+
+# create a box plot
+reducedTerms_female %>%
+  mutate(parentTerm = fct_reorder(parentTerm, desc(size))) %>%
+  ggplot( aes(x=parentTerm, y=size, fill = source)) +
+  geom_bar(stat="identity", alpha=.7, width=.7) +
+  coord_flip() +
+  labs(x = "GO Term", y = "Number of Associations", fill = "Source") +
+  theme_bw() +
+  theme(text = element_text(size = 7),
+        axis.text = element_text(color = "black")) +
+  scale_y_continuous(expand = c(0, 300)) +
+  scale_fill_manual(values = c("#9ECAE1", "#E41A1C", "#B8E186")) 
+ggsave("female_go_bar.png", width = 7, height = 7, units = "in")
+
+# male plot 
+reducedTerms_male %>%
+  mutate(parentTerm = fct_reorder(parentTerm, desc(size))) %>%
+  ggplot( aes(x=parentTerm, y=size, fill = source)) +
+  geom_bar(stat="identity", alpha=.8, width=.7) +
+  coord_flip() +
+  labs(x = "GO Term", y = "Number of Associations", fill = "Source") +
+  theme_bw() +
+  theme(text = element_text(size = 10),
+        axis.text = element_text(color = "black")) +
+  scale_y_continuous(expand = c(0, 300)) +
+  scale_fill_manual(values = c("#9ECAE1", "#E41A1C", "#B8E186")) 
+ggsave("male_go_bar.png", width = 7, height = 7, units = "in")
+```
+
+# summary visualisation of GO terms
+```{r}
+# select for summary GO terms
+summaryTerms_female <- dplyr::filter(reducedTerms_female, parentTerm %in% c("regulation of anatomical structure morphogenesis", "positive regulation of phosphorus metabolic process", "synapse organization", "smooth muscle tissue development", "regulation of fatty acid oxidation", "fatty acid oxidation", "response to folic acid", "microtubule severing ATPase activity", "integrin binding", "trans-1,2-dihydrobenzene-1,2-diol dehydrogenase activity"))
+
+## add a column defning sex
+summaryTerms_female$tissue <- "Mid-gestation Placenta (Female)"
+
+# select for summary GO terms
+summaryTerms_male <- dplyr::filter(reducedTerms_male, parentTerm %in% c("vitamin B6 binding", "sulfur compound binding", "integrin binding", "microtubule severing ATPase activity", "trans-1,2-dihydrobenzene-1,2-diol dehydrogenase activity", "thrombin-activated receptor activity")) 
+
+## add a column defining the sex
+summaryTerms_male$tissue <- "Mid-gestation Placenta (Male)"
+
+# combine the symmaryTerms dfs
+summaryTerms <- rbind(summaryTerms_female, summaryTerms_male)
+
+# create a dot plot
+summaryTerms %>%
+  ggplot( aes(x=tissue, y=parentTerm, color = source, size = size)) +
+  geom_point(stat="identity", show.legend = TRUE) +
+  labs(x = "Tissue", y = "Parent GO Term", color = "Source", size = "Number of Associations") +
+  theme_bw() +
+  theme(text = element_text(size = 10, family = "Times New Roman"),
+        axis.text = element_text(color = "black"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 10),
+        axis.title.x = element_blank(),
+        legend.text = element_text(size = 10)) +
+  scale_color_manual(values = c("#9ECAE1", "#B8E186"))
+ggsave("fetal_go_point.png", width = 8.5, height = 7, units = "in")
+```
+
+
+# GO analysis of female and male uniquely depleted gene sets
+```{r}
+# load in data 
+## female unique depletion
+female_depletion <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/tissue_depletion/rawData/unique_female_depletion.csv"),
+                               col_names = TRUE,
+                               delim = ",") %>% 
+  dplyr::select(., -...1)
+
+## male unique depletion
+male_depletion <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/tissue_depletion/rawData/unique_male_depletion.csv"),
+                               col_names = TRUE,
+                               delim = ",") %>% 
+  dplyr::select(., -...1)
+
+
+# gprofiler2 GO analysis
+## female
+## perform GO enrichment analysis on genes
+female_enriched <- gost(female_depletion$ensembl, organism = "hsapiens",
+                                   ordered_query = TRUE,
+                                   correction_method = "fdr")
+## print the enriched terms to visualise initial GO terms before semantic reduction 
+print(female_enriched$result)
+
+
+## male 
+## perform GO enrichment analysis on genes
+male_enriched <- gost(male_depletion$ensembl, organism = "hsapiens",
+                                   ordered_query = TRUE,
+                                   correction_method = "fdr")
+## print the enriched terms to visualise initial GO terms before semantic reduction 
+head(male_enriched$result, 30)
+
+```
+
+# rrvgo reduce redundancy of unique female human GO terms
+```{r}
+#BiocManager::install("rrvgo")
+library(rrvgo)
+library(ComplexHeatmap)
+
+# BP 
+## create similarity matrix for GO terms of BP source
+simMatrix_BP <- calculateSimMatrix(female_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "BP",
+                                method = "Rel")
+## set scores
+scores <- setNames(-log10(female_enriched$result$p_value), female_enriched$result$term_id)
+## reduce the number of terms based on the similarity matrix for BP terms
+reducedTerms_BP <- reduceSimMatrix(simMatrix_BP,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+## add the source to table
+reducedTerms_BP$source <- "BP"
+
+# MF 
+## create similarity matrix for GO terms of MF source
+simMatrix_MF <- calculateSimMatrix(female_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "MF",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for MF terms
+reducedTerms_MF <- reduceSimMatrix(simMatrix_MF,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+## add the source to table
+reducedTerms_MF$source <- "MF"
+
+# CC 
+## create similarity matrix for GO terms of CC source
+simMatrix_CC <- calculateSimMatrix(female_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "CC",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for CC terms
+reducedTerms_CC <- reduceSimMatrix(simMatrix_CC,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+## add the source to table
+reducedTerms_CC$source <- "CC"
+
+# create a table of reduced terms 
+reduced_BP <- dplyr::select(reducedTerms_BP, parent, parentTerm, size, source)
+reduced_MF <- dplyr::select(reducedTerms_MF, parent, parentTerm, size, source)
+reduced_CC <- dplyr::select(reducedTerms_CC, parent, parentTerm, size, source)
+reducedM_BP <- dplyr::select(reducedTermsM_BP, parent, parentTerm, size, source)
+reducedM_MF <- dplyr::select(reducedTermsM_MF, parent, parentTerm, size, source)
+reducedM_CC <- dplyr::select(reducedTermsM_CC, parent, parentTerm, size, source)
+
+# merge tables
+reduced_combined <- rbind(reduced_BP, reduced_MF) %>% 
+  rbind(., reduced_CC) %>%
+  group_by(parentTerm, source) %>%
+  summarise(size = sum(size), .groups = 'drop')
+
+male <- rbind(reducedM_BP, reducedM_MF) %>% 
+  rbind(., reducedM_CC) %>%
+  group_by(parentTerm, source) %>%
+  summarise(size = sum(size), .groups = 'drop')
+
+# create a box plot
+  ggplot(reduced_combined, aes(x=parentTerm, y=size, fill = source)) +
+  geom_bar(stat="identity", alpha=.8, width=.7) +
+  coord_flip() +
+  labs(x = "GO Term", y = "Number of Associations") +
+  theme_bw() +
+  theme(text = element_text(size = 10)) +
+  scale_y_continuous(expand = c(0, 300))
+```
+
+# rrvgo reduce redundancy of unique male human GO terms
+```{r}
+# BP 
+## create similarity matrix for GO terms of BP source
+simMatrixM_BP <- calculateSimMatrix(male_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "BP",
+                                method = "Rel")
+## set scores
+scoresM <- setNames(-log10(male_enriched$result$p_value), male_enriched$result$term_id)
+## reduce the number of terms based on the similarity matrix for BP terms
+reducedTermsM_BP <- reduceSimMatrix(simMatrixM_BP,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresM)
+## add the source to table
+reducedTermsM_BP$source <- "BP"
+
+# MF 
+## create similarity matrix for GO terms of MF source
+simMatrixM_MF <- calculateSimMatrix(male_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "MF",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for MF terms
+reducedTermsM_MF <- reduceSimMatrix(simMatrixM_MF,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresM)
+## add the source to table
+reducedTermsM_MF$source <- "MF"
+
+# CC 
+## create similarity matrix for GO terms of CC source
+simMatrixM_CC <- calculateSimMatrix(male_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "CC",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for CC terms
+reducedTermsM_CC <- reduceSimMatrix(simMatrixM_CC,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresM)
+## add the source to table
+reducedTermsM_CC$source <- "CC"
+
+# create a table of reduced terms 
+reducedM_BP <- dplyr::select(reducedTermsM_BP, parent, parentTerm, size, source)
+reducedM_MF <- dplyr::select(reducedTermsM_MF, parent, parentTerm, size, source)
+reducedM_CC <- dplyr::select(reducedTermsM_CC, parent, parentTerm, size, source)
+
+# merge tables
+male <- rbind(reducedM_BP, reducedM_MF) %>% 
+  rbind(., reducedM_CC) %>%
+  group_by(parentTerm, source) %>%
+  summarise(size = sum(size), .groups = 'drop')
+  
+# male plot 
+ggplot(male, aes(x=parentTerm, y=size, fill = source)) +
+  geom_bar(stat="identity", alpha=.8, width=.7) +
+  coord_flip() +
+  labs(x = "GO Term", y = "Number of Associations") +
+  theme_bw() +
+  theme(text = element_text(size = 10)) +
+  scale_y_continuous(expand = c(0, 300))
+```
+
+# export reduced go lists
+```{r}
+# female depletion unique list
+write.csv(reduced_combined, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/unique depletions/female_unique_go_terms.csv"))
+
+# male depletion unique list
+write.csv(male, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/unique depletions/male_unique_go_terms.csv"))
+
+## female comparison original go terms
+original_female <- female_enriched$result %>% 
+  as.data.frame() %>% 
+  dplyr::select(., term_name, source)
+write.csv(original_female, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/unique depletions/female_unique_original_go.csv"))
+
+## male comparison original go terms
+original_male <- male_enriched$result %>% 
+  as.data.frame() %>% 
+  dplyr::select(., term_name, source)
+write.csv(original_male, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/unique depletions/male_unique_original_go.csv"))
+
+## combined depletion list
+write.csv(reduced_all, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/unique depletions/fetal_combined_go_terms.csv"))
+
+## combined comparison original go terms
+original_all <- combined_enriched$result %>% 
+  as.data.frame() %>% 
+  dplyr::select(., term_name, source)
+write.csv(original_all, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/unique depletions/fetal_combined_original_go.csv"))
+```
+
+# overlapping gene depletion GO analysis
+```{r}
+# created combined df
+combined_depletion <- dplyr::inner_join(placentaF_depleted, placentaM_depleted, by = join_by("ensembl"))
+## export overlapping genes for scatter plot
+write.csv(combined_depletion, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/rawData/overlapping_depletion.csv"))
+
+# GO analysis on combined depletion
+## perform GO enrichment analysis on genes
+combined_enriched <- gost(combined_depletion$ensembl, organism = "hsapiens",
+                                   ordered_query = TRUE,
+                                   correction_method = "fdr")
+## print the enriched terms to visualise initial GO terms before semantic reduction 
+print(combined_enriched$result)
+```
+
+# rrvgo reduce redundancy of combined depleted human GO terms
+```{r}
+# BP 
+## create similarity matrix for GO terms of BP source
+simMatrixC_BP <- calculateSimMatrix(combined_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "BP",
+                                method = "Rel")
+## set scores
+scoresC <- setNames(-log10(combined_enriched$result$p_value), combined_enriched$result$term_id)
+## reduce the number of terms based on the similarity matrix for BP terms
+reducedTermsC_BP <- reduceSimMatrix(simMatrixC_BP,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresC)
+## add the source to table
+reducedTermsC_BP$source <- "BP"
+
+# MF 
+## create similarity matrix for GO terms of MF source
+simMatrixC_MF <- calculateSimMatrix(combined_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "MF",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for MF terms
+reducedTermsC_MF <- reduceSimMatrix(simMatrixC_MF,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresC)
+## add the source to table
+reducedTermsC_MF$source <- "MF"
+
+# CC 
+## create similarity matrix for GO terms of CC source
+simMatrixC_CC <- calculateSimMatrix(combined_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "CC",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for CC terms
+reducedTermsC_CC <- reduceSimMatrix(simMatrixC_CC,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresC)
+## add the source to table
+reducedTermsC_CC$source <- "CC"
+
+# create a table of reduced terms 
+reducedC_BP <- dplyr::select(reducedTermsC_BP, parent, parentTerm, size, source)
+reducedC_MF <- dplyr::select(reducedTermsC_MF, parent, parentTerm, size, source)
+reducedC_CC <- dplyr::select(reducedTermsC_CC, parent, parentTerm, size, source)
+
+# merge tables
+reduced_all <- rbind(reducedC_BP, reducedC_MF) %>% 
+  rbind(., reducedC_CC) %>%
+  group_by(parentTerm, source) %>%
+  summarise(size = sum(size), .groups = 'drop')
+
+# create a box plot
+  ggplot(reduced_all, aes(x=parentTerm, y=size, fill = source)) +
+  geom_bar(stat="identity", alpha=.8, width=.7) +
+  coord_flip() +
+  labs(x = "GO Term", y = "Number of Associations") +
+  theme_bw() +
+  theme(text = element_text(size = 10)) +
+  scale_y_continuous(expand = c(0, 300))
+```
+

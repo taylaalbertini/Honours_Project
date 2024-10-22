@@ -59,7 +59,7 @@ ncpms_male_2 <- t(ncpms_male) %>%
 ncpms_male_2 <- ncpms_male_2[,-3]
 ## rename column names
 
-colnames(ncpms_male_2) <- gsub("X1", "Male Placenta (early-gestation)", colnames(ncpms_male_2))
+colnames(ncpms_male_2) <- gsub("X1", "Early-gestation Placenta (Male)", colnames(ncpms_male_2))
 ## remove sex_tissue row
 ncpms_male_2 <- ncpms_male_2[-1,]
 
@@ -71,15 +71,16 @@ heat_plot <- dplyr::left_join(depleted_placentaM, ncpms_male_2, by = join_by(ens
 
 # tidy 
 ## replace placenta colname 
-colnames(heat_plot) <- gsub("nCPM_mid_placenta_TMM", "Male Placenta (mid-gestation)", colnames(heat_plot))
+colnames(heat_plot) <- gsub("nCPM_mid_placenta_TMM", "Mid-gestation Placenta (Male)", colnames(heat_plot))
 ## put ncpms in descending order
-heat_plot_ordered <- heat_plot[order(heat_plot$`Male Placenta (mid-gestation)`, decreasing = TRUE),]
+heat_plot_ordered <- heat_plot[order(heat_plot$`Mid-gestation Placenta (Male)`, decreasing = TRUE),]
 ## make heat_plot_ordered numeric
-heat_plot_ordered$`Male Placenta (early-gestation)` <- as.numeric(heat_plot_ordered$`Male Placenta (early-gestation)`)
+heat_plot_ordered$`Early-gestation Placenta (Male)` <- as.numeric(heat_plot_ordered$`Early-gestation Placenta (Male)`)
 ## change order so that placenta is last
-heat_plot_ordered <- dplyr::relocate(heat_plot_ordered, `Male Placenta (mid-gestation)`, .after = `Male Placenta (early-gestation)`)
+heat_plot_ordered <- dplyr::relocate(heat_plot_ordered, `Mid-gestation Placenta (Male)`, .after = `Early-gestation Placenta (Male)`)
 rownames(heat_plot_ordered) <- NULL
 pheat_plot <- tibble::column_to_rownames(heat_plot_ordered, var = "ensembl")
+write.csv(pheat_plot, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/libsize/midM_pheat.csv"))
 
 # complex heatmap
 library(ComplexHeatmap)
@@ -102,10 +103,11 @@ heatmapM = Heatmap(log10(mat),
              column_title = "Tissues", 
              column_title_gp = gpar(fontsize = 12),
              column_title_side = c("bottom"),
-             row_title = "Genes", 
+             #row_title = "Genes", 
              row_title_gp = gpar(fontsize = 12),
              show_row_names = FALSE,
              column_names_rot = 45,
+             show_column_names = FALSE,
              column_names_gp = gpar(fontsize = 10),
              cluster_rows = FALSE,
              cluster_columns = FALSE,
@@ -116,7 +118,7 @@ heatmapM = Heatmap(log10(mat),
 heatmapM
 
 # export heatmap as jpeg 
-path_save <- "/Users/taylaalbertini/Desktop/R studio/honours_project/oxygen_threshold/analysis/heatmaps/midM_depleted_heatmap.jpeg"
+path_save <- "/Users/taylaalbertini/Desktop/midM_depleted.jpeg"
 
 jpeg(path_save, width = 4000, height = 3500, res = 400)
 draw(heatmapM)

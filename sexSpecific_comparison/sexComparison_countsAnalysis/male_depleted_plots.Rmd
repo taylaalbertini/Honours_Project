@@ -58,7 +58,7 @@ ncpms_male_2 <- t(ncpms_male) %>%
 ## remove placenta counts
 ncpms_male_2 <- ncpms_male_2[,-3]
 ## rename column names
-colnames(ncpms_male_2) <- gsub("X1", "Female Placenta", colnames(ncpms_male_2))
+colnames(ncpms_male_2) <- gsub("X1", "Mid-gestation Placenta (Female)", colnames(ncpms_male_2))
 ## remove sex_tissue row
 ncpms_male_2 <- ncpms_male_2[-1,]
 
@@ -70,18 +70,20 @@ heat_plot <- dplyr::left_join(depleted_placentaM, ncpms_male_2, by = join_by(ens
 
 # tidy 
 ## replace placenta colname 
-colnames(heat_plot) <- gsub("nCPM_male_placenta_TMM", "Male Placenta", colnames(heat_plot))
+colnames(heat_plot) <- gsub("nCPM_male_placenta_TMM", "Mid-gestation Placenta (Male)", colnames(heat_plot))
 ## put ncpms in descending order
-heat_plot_ordered <- heat_plot[order(heat_plot$`Male Placenta`, decreasing = TRUE),]
+heat_plot_ordered <- heat_plot[order(heat_plot$`Mid-gestation Placenta (Male)`, decreasing = TRUE),]
 ## make heat_plot_ordered numeric
-heat_plot_ordered$`Female Placenta` <- as.numeric(heat_plot_ordered$`Female Placenta`)
+heat_plot_ordered$`Mid-gestation Placenta (Female)` <- as.numeric(heat_plot_ordered$`Mid-gestation Placenta (Female)`)
 ## change order so that placenta is last
-heat_plot_ordered <- dplyr::relocate(heat_plot_ordered, `Male Placenta`, .after = `Female Placenta`)
+heat_plot_ordered <- dplyr::relocate(heat_plot_ordered, `Mid-gestation Placenta (Male)`, .after = `Mid-gestation Placenta (Female)`)
 rownames(heat_plot_ordered) <- NULL
 pheat_plot <- tibble::column_to_rownames(heat_plot_ordered, var = "ensembl")
 
 # complex heatmap
 library(ComplexHeatmap)
+library(circlize)
+library(grid)
 
 # Heatmap function to visualise the matrix as a heatmap with default settings
 ## make my df a matrix
@@ -100,10 +102,10 @@ heatmapM <- Heatmap(log10(mat),
         column_title = "Tissues", 
         column_title_gp = gpar(fontsize = 12),
         column_title_side = c("bottom"),
-        row_title = "Genes", 
+        #row_title = "Genes", 
         row_title_gp = gpar(fontsize = 12),
         show_row_names = FALSE,
-        column_names_rot = 45,
+        show_column_names = FALSE,
         column_names_gp = gpar(fontsize = 10),
         cluster_rows = FALSE,
         cluster_columns = FALSE,
@@ -115,66 +117,9 @@ heatmapM <- Heatmap(log10(mat),
 heatmapM
 
 # export heatmap as jpeg 
-path_save <- "/Users/taylaalbertini/Desktop/R studio/honours_project/sexSpecific_comparison/analysis/heatmaps/male_depleted_heatmap_update.jpeg"
+path_save <- "/Users/taylaalbertini/Desktop/MidM_sex_specific_heatmap.jpeg"
 
 jpeg(path_save, width = 4000, height = 3500, res = 400)
 draw(heatmapM)
 dev.off()
-```
-
-# scatter plots
-```{r}
-# read in annotated data
-annot_depleted <- read_delim(file = file.path(projectDir, "placenta_male_depleted_annotated.csv"),
-                             col_names = TRUE,
-                             delim = ",") %>%
-  as.data.frame() %>%
-  ## remove the first column "...1" that;s input when the file is imported
-  dplyr::select(., -...1)
-
-# make an effect size column
-#annot_depleted$effect_size <- annot_depleted$nCPM_5_TMM - annot_depleted$nCPM_placenta_TMM
-
-# subset annot_depleted to include hgnc symbols, TMM normalised ncpms and nCPM_ratio_TMM
-scatter <- dplyr::select(annot_depleted, hgnc_symbol, nCPM_male_placenta_TMM, nCPM_ratio_TMM)
-
-# order by nCPM_ratio_TMM - descending 
-scatter_ordered <- scatter[order(scatter$nCPM_ratio_TMM, decreasing = TRUE),]
-
-# convert hgnc_symbol from a column to row names 
-rownames(scatter_ordered) <- NULL
-scatter_plot <- tibble::column_to_rownames(scatter_ordered, var = "hgnc_symbol")
-
-# create a scatter plot where x-axis = nCPMs and y-axis = nCPM_ratio using ggplot2
-library(ggrepel)
-ggplot(data = scatter_plot,
-       aes(x = nCPM_male_placenta_TMM,
-           y = nCPM_ratio_TMM)) +
-  geom_point(#size = scatter_plot$effect_size * 0.05,
-             color = "black",
-             shape = 1) +
-  #ggtitle("Depleted male mid-gestation placental transcripts compared with female mid-gestation placenta") +
-  #scale_size_continuous(name = "Effect size", range = c(1, 2)) +
-  labs(x = "Normalised Counts Per Million", 
-       y = "nCPM(rank=1)/nCPM(rank=2)") +
-  ## set the y-axis numbers shown
-  scale_y_continuous(breaks = c(pretty(range(scatter_plot$y)), 3, 40, 80, 120, 150)) +
-  
-  ## ensures the y-axis starts at 0
-  coord_cartesian(ylim = c(0, max(scatter_plot$nCPM_ratio_TMM) * 1.1), expand = FALSE) +
-  
-  geom_text_repel(data = subset(scatter_plot, nCPM_ratio_TMM > 3), ## annotates/labels the ten-greatest nCPM ratio genes 
-            aes(label = rownames(subset(scatter_plot, nCPM_ratio_TMM > 3))),
-            nudge_y = 10,
-            size          = 2.5,
-            box.padding   = 1.5,
-            point.padding = 0.5,
-            force         = 100,
-            segment.size  = 0.2,
-            segment.color = "grey50",
-            direction     = "x") +
-  
-  theme_bw() + 
-  theme(plot.title = element_text(size = 10)) ## sets the plot background theme to black and white
-ggsave("maleplotvsfemale.png", width = 7, height = 7, units = "in") ## exported the last graph printed
 ```

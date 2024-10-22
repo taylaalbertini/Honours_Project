@@ -116,35 +116,36 @@ head(kegg_result, 21)
 # gprofiler2 functional enrichment analysis
 ```{r}
 # install and laod library for gprofiler2
-BiocManager::install("gprofiler2")
+#BiocManager::install("gprofiler2")
 library(gprofiler2)
-
-# female placenta enrichment analysis
-placentaF_enriched <- gost(placentaF_depleted$ensembl, organism = "hsapiens")
-head(placentaF_enriched$result)
 
 # order genes by nCPM_ratio
 placentaF_ordered <- placentaF_depleted[order(placentaF_depleted$nCPM_ratio_TMM, decreasing = TRUE),]
 
 # perform enrichment analysis on ordered genes
 placentaF_ordered_enriched <- gost(placentaF_ordered$ensembl, organism = "hsapiens",
-                                   ordered_query = TRUE)
+                                   ordered_query = TRUE,
+                                   evcodes = TRUE)
 
 head(placentaF_ordered_enriched$result, 50)
 
-# male placenta enrichment analysis
-placentaM_enriched <- gost(placentaM_depleted$ensembl, organism = "hsapiens")
-head(placentaM_enriched$result)
+# investigate which genes were enriched in fatty acid oxidation related GO terms
+go_term_of_interest <- "2-oxoglutarate-dependent dioxygenase activity"
+enriched_row <- placentaF_ordered_enriched$result[placentaF_ordered_enriched$result$term_name == go_term_of_interest, ]
+print(enriched_row$intersection)
+```
 
+```{r}
 # order genes by nCPM_ratio
 placentaM_ordered <- placentaM_depleted[order(placentaM_depleted$nCPM_ratio_TMM, decreasing = TRUE),]
 # perform enrichment on ordered genes
 placentaM_ordered_enriched <- gost(placentaM_ordered$ensembl, organism = "hsapiens",
-                                   ordered_query = TRUE)
+                                   ordered_query = TRUE,
+                                   evcodes = TRUE)
 head(placentaM_ordered_enriched$result, 50)
 ```
 
-# visualisation of enriched female placenta ensembls
+# visualisation of enriched male placenta ensembls
 ```{r}
 # female placenta plot
 # visualise the enriched genes in a plot
@@ -178,3 +179,44 @@ placentaM_enriched_export <- placentaM_enriched_export[,-14]
 ## export as a cvs
 write.csv(placentaM_enriched_export, file = file.path(projectDir, "placentaM_sexComparison_enrichedPathways.csv"))
 ```
+
+# rrvgo semantic reduction on midF GO terms
+```{r}
+#BiocManager::install("rrvgo")
+library(rrvgo)
+library(ComplexHeatmap)
+
+# BP 
+## create similarity matrix for GO terms of BP source
+simMatrix_BP <- calculateSimMatrix(placentaF_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "BP",
+                                method = "Rel")
+## set scores
+scores <- setNames(-log10(placentaF_ordered_enriched$result$p_value), placentaF_ordered_enriched$result$term_id)
+## reduce the number of terms based on the similarity matrix for BP terms
+reducedTerms_BP <- reduceSimMatrix(simMatrix_BP,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+## add the source to table
+reducedTerms_BP$source <- "BP"
+
+# MF 
+## create similarity matrix for GO terms of MF source
+simMatrix_MF <- calculateSimMatrix(placentaF_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "MF",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for MF terms
+reducedTerms_MF <- reduceSimMatrix(simMatrix_MF,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+## add the source to table
+reducedTerms_MF$source <- "MF"
+
+## export reduced GO terms for visualisation
+write.csv(reducedTerms_MF, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/raw_data/midF_sexspecific.csv"))
+```
+

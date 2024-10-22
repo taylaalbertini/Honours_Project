@@ -59,7 +59,7 @@ ncpms_male_2 <- t(ncpms_male) %>%
 ncpms_male_2 <- ncpms_male_2[,-2]
 ## rename column names
 
-colnames(ncpms_male_2) <- gsub("X2", "Male Placenta (mid-gestation)", colnames(ncpms_male_2))
+colnames(ncpms_male_2) <- gsub("X2", "Mid-gestation Placenta (Male)", colnames(ncpms_male_2))
 ## remove sex_tissue row
 ncpms_male_2 <- ncpms_male_2[-1,]
 
@@ -71,13 +71,13 @@ heat_plot <- dplyr::left_join(depleted_placentaM, ncpms_male_2, by = join_by(ens
 
 # tidy 
 ## replace placenta colname 
-colnames(heat_plot) <- gsub("nCPM_early_placenta_TMM", "Male Placenta (early-gestation)", colnames(heat_plot))
+colnames(heat_plot) <- gsub("nCPM_early_placenta_TMM", "Early-gestation Placenta (Male)", colnames(heat_plot))
 ## put ncpms in descending order
-heat_plot_ordered <- heat_plot[order(heat_plot$`Male Placenta (early-gestation)`, decreasing = TRUE),]
+heat_plot_ordered <- heat_plot[order(heat_plot$`Early-gestation Placenta (Male)`, decreasing = TRUE),]
 ## make heat_plot_ordered numeric
-heat_plot_ordered$`Male Placenta (mid-gestation)` <- as.numeric(heat_plot_ordered$`Male Placenta (mid-gestation)`)
+heat_plot_ordered$`Mid-gestation Placenta (Male)` <- as.numeric(heat_plot_ordered$`Mid-gestation Placenta (Male)`)
 ## change order so that placenta is last
-heat_plot_ordered <- dplyr::relocate(heat_plot_ordered, `Male Placenta (early-gestation)`, .after = `Male Placenta (mid-gestation)`)
+heat_plot_ordered <- dplyr::relocate(heat_plot_ordered, `Early-gestation Placenta (Male)`, .after = `Mid-gestation Placenta (Male)`)
 rownames(heat_plot_ordered) <- NULL
 pheat_plot <- tibble::column_to_rownames(heat_plot_ordered, var = "ensembl")
 
@@ -89,36 +89,40 @@ library(ComplexHeatmap)
 class(pheat_plot)
 mat <- as.matrix(pheat_plot)
 class(mat)
+write.csv(pheat_plot, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/libsize/earlyM_pheat.csv"))
 
 ## column splot
 column_split_vector <- c(rep("Group 1", 1), "Group 2")
 
 ## craete box plot annotation
 column_ha <- HeatmapAnnotation(`log10 (nCPMs)` = anno_boxplot(log10(mat), which = c("column"), height = unit(4, "cm")))
-## set colour mapping for range -4 to 4
-color_mapping <- colorRamp2(c(-4, 0, 4), c("blue", "white", "red"))
+## set the colour for the range -4 to 4
+color_mapping <- colorRamp2(c(-2, 1, 4), c("blue", "white", "red"))
+
 ## print heatmap with annotation
 heatmapM = Heatmap(log10(mat), 
              column_split = column_split_vector,
              column_title = "Tissues", 
              column_title_gp = gpar(fontsize = 12),
              column_title_side = c("bottom"),
-             row_title = "Genes", 
+             #row_title = "Genes", 
              row_title_gp = gpar(fontsize = 12),
              show_row_names = FALSE,
              column_names_rot = 45,
              column_names_gp = gpar(fontsize = 10),
              cluster_rows = FALSE,
+             show_heatmap_legend = FALSE,
              cluster_columns = FALSE,
              width = unit(2, "cm"),
              name = "log10 (nCPM)",
+             show_column_names = FALSE,
              border = "black",
              bottom_annotation = column_ha,
              col = color_mapping)
 heatmapM
 
 # export heatmap as jpeg 
-path_save <- "/Users/taylaalbertini/Desktop/R studio/honours_project/oxygen_threshold/analysis/heatmaps/earlyM_depleted_heatmap_updated.jpeg"
+path_save <- "/Users/taylaalbertini/Desktop/earlyM_depleted_heatmap_updated.jpeg"
 
 jpeg(path_save, width = 4000, height = 3500, res = 400)
 draw(heatmapM)

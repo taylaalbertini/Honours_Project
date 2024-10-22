@@ -55,7 +55,7 @@ placentaF_depleted %<>% dplyr::select(., ensembl, nCPM_1_TMM, nCPM_termF_placent
   arrange(desc(nCPM_termF_placenta_TMM)) %>% 
   tibble::column_to_rownames(., var = "ensembl")
 # clean up colnames 
-colnames(placentaF_depleted) <- c("Male Placenta (term)", "Female Placenta (term)")
+colnames(placentaF_depleted) <- c("Term Placenta (Male)", "Term Placenta (Female)")
 
 # complex heatmap
 library(ComplexHeatmap)
@@ -76,10 +76,10 @@ heatmapF <- Heatmap(log10(matF + 0.001),
         column_title = "Tissues", 
         column_title_gp = gpar(fontsize = 12),
         column_title_side = c("bottom"),
-        row_title = "Genes", 
+        #row_title = "Genes", 
         row_title_gp = gpar(fontsize = 12),
         show_row_names = FALSE,
-        column_names_rot = 45,
+        show_column_names = FALSE,
         column_names_gp = gpar(fontsize = 10),
         cluster_rows = FALSE,
         cluster_columns = FALSE,
@@ -90,7 +90,7 @@ heatmapF <- Heatmap(log10(matF + 0.001),
 heatmapF
 
 # export heatmap as jpeg 
-path_save <- "/Users/taylaalbertini/Desktop/termF_depleted_heatmap.jpeg"
+path_save <- "/Users/taylaalbertini/Desktop/termF_sex_specific_heatmap.jpeg"
 
 jpeg(path_save, width = 4000, height = 3500, res = 400)
 draw(heatmapF)
@@ -105,7 +105,7 @@ placentaM_depleted %<>% dplyr::select(., ensembl, nCPM_1_TMM, nCPM_termM_placent
   arrange(desc(nCPM_termM_placenta_TMM)) %>% 
   tibble::column_to_rownames(., var = "ensembl")
 # clean up colnames 
-colnames(placentaM_depleted) <- c("Female Placenta (term)", "Male Placenta (term)")
+colnames(placentaM_depleted) <- c("Term Placenta (Female)", "Term Placenta (Male)")
 
 # complex heatmap
 library(ComplexHeatmap)
@@ -126,10 +126,10 @@ heatmapM <- Heatmap(log10(matM),
         column_title = "Tissues", 
         column_title_gp = gpar(fontsize = 12),
         column_title_side = c("bottom"),
-        row_title = "Genes", 
+        #row_title = "Genes", 
         row_title_gp = gpar(fontsize = 12),
         show_row_names = FALSE,
-        column_names_rot = 45,
+        show_column_names = FALSE,
         column_names_gp = gpar(fontsize = 10),
         cluster_rows = FALSE,
         cluster_columns = FALSE,
@@ -140,10 +140,10 @@ heatmapM <- Heatmap(log10(matM),
 heatmapM
 
 # export heatmap as jpeg 
-path_save <- "/Users/taylaalbertini/Desktop/termM_depleted_heatmap.jpeg"
+path_save <- "/Users/taylaalbertini/Desktop/termM_sex_specific_heatmap.jpeg"
 
 jpeg(path_save, width = 4000, height = 3500, res = 400)
-draw(heatmapF)
+draw(heatmapM)
 dev.off()
 ```
 

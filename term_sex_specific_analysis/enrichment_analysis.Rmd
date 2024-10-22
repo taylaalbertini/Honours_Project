@@ -22,6 +22,10 @@ library(Glimma)
 library(clusterProfiler)
 library(enrichplot)
 library(gprofiler2)
+library(forcats)
+library(rrvgo)
+library(ComplexHeatmap)
+
 
 # set project directory
 projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/term_sex_specific_analysis/rawData"
@@ -56,58 +60,174 @@ placentaF_ordered <- placentaF_depleted[order(placentaF_depleted$nCPM_ratio_TMM,
 
 # perform enrichment analysis on ordered genes
 placentaF_ordered_enriched <- gost(placentaF_ordered$ensembl, organism = "hsapiens",
-                                   ordered_query = TRUE)
-
+                                   ordered_query = TRUE,
+                                   evcodes = TRUE)
 head(placentaF_ordered_enriched$result, 7)
 
+## reduce terms
+library(rrvgo)
+library(ComplexHeatmap)
+# MF 
+## create similarity matrix for GO terms of MF source
+simMatrix_MF <- calculateSimMatrix(placentaF_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "MF",
+                                method = "Rel")
+## set scores
+scores <- setNames(-log10(placentaF_ordered_enriched$result$p_value), placentaF_ordered_enriched$result$term_id)
+## reduce the number of terms based on the similarity matrix for MF terms
+reducedTerms_MF <- reduceSimMatrix(simMatrix_MF,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scores)
+
+# investigate which genes were enriched in histone demethylase activity related GO terms
+go_term_of_interest <- "demethylase activity"
+enriched_row <- placentaF_ordered_enriched$result[placentaF_ordered_enriched$result$term_name == go_term_of_interest, ]
+print(enriched_row$intersection)
+```
+
+```{r}
 # male placenta enrichment analysis
 # order genes by nCPM_ratio
 placentaM_ordered <- placentaM_depleted[order(placentaM_depleted$nCPM_ratio_TMM, decreasing = TRUE),]
 # perform enrichment on ordered genes
 placentaM_ordered_enriched <- gost(placentaM_ordered$ensembl, organism = "hsapiens",
-                                   ordered_query = TRUE)
+                                   ordered_query = TRUE,
+                                   evcodes = TRUE)
 head(placentaM_ordered_enriched$result, 50)
+
+# investigate which genes were enriched in GO terms
+go_term_of_interest <- "extracellular region"
+enriched_row <- placentaM_ordered_enriched$result[placentaM_ordered_enriched$result$term_name == go_term_of_interest, ]
+print(enriched_row$intersection)
 ```
 
-# semantic reduction of GO terms
+# rrvgo reduce redundancy of (term male) human GO terms
 ```{r}
-# load simplifyEnrichment package
-library(simplifyEnrichment)
-library(org.Hs.eg.db)
-library(Cairo)
+# BP 
+## create similarity matrix for GO terms of BP source
+simMatrixM_BP <- calculateSimMatrix(placentaM_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "BP",
+                                method = "Rel")
+## set scores
+scoresM <- setNames(-log10(placentaM_ordered_enriched$result$p_value), placentaM_ordered_enriched$result$term_id)
+## reduce the number of terms based on the similarity matrix for BP terms
+reducedTermsM_BP <- reduceSimMatrix(simMatrixM_BP,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresM)
+## add the source to table
+reducedTermsM_BP$source <- "BP"
 
-# semantic reduction of female GO terms
-## craete a similarity matrix of the GO terms 
-### make a vector of GO IDs
-go_id_vectorF <- placentaF_ordered_enriched$result$term_id %>%
-  as.vector()
-go_id_similarityMatrixF <- GO_similarity(go_id_vectorF, 
-                     ont = "BP", 
-                     db = "org.Hs.eg.db", 
-                     measure = "Rel", 
-                     remove_orphan_terms = FALSE)
-## use the simplifyEnrichment tool to cluster the GO terms 
-go_id_simplifiedF <- simplifyGO(mat = go_id_similarityMatrixF, 
-                               method = "binary_cut", 
-                               control = list(), 
-                               plot = TRUE,
-                               verbose = TRUE) 
-
-
-# semantic reduction of male GO terms
-## craete a similarity matrix of the GO terms 
-### make a vector of GO IDs
-go_id_vectorM <- placentaM_ordered_enriched$result$term_id %>%
-  as.vector()
-go_id_similarityMatrixM <- GO_similarity(go_id_vectorM, 
-                     ont = "BP", 
-                     db = "org.Hs.eg.db", 
-                     measure = "Rel", 
-                     remove_orphan_terms = FALSE)
-## use the simplifyEnrichment tool to cluster the GO terms 
-go_id_simplifiedM <- simplifyGO(mat = go_id_similarityMatrixM, 
-                               method = "binary_cut", 
-                               control = list(), 
-                               plot = TRUE, 
-                               verbose = TRUE)
+# CC 
+## create similarity matrix for GO terms of CC source
+simMatrixM_CC <- calculateSimMatrix(placentaM_ordered_enriched$result$term_id,
+                                orgdb = "org.Hs.eg.db",
+                                ont = "CC",
+                                method = "Rel")
+## reduce the number of terms based on the similarity matrix for CC terms
+reducedTermsM_CC <- reduceSimMatrix(simMatrixM_CC,
+                                threshold = 0.85,
+                                orgdb = "org.Hs.eg.db",
+                                scoresM)
+## add the source to table
+reducedTermsM_CC$source <- "CC"
 ```
+
+# bar graph visualisation
+```{r}
+# create a table of reduced terms 
+reducedM_BP <- dplyr::select(reducedTermsM_BP, parent, parentTerm, size, source)
+reducedM_CC <- dplyr::select(reducedTermsM_CC, parent, parentTerm, size, source)
+
+reducedTerms_termM <- rbind(reducedM_BP, reducedM_CC) %>%
+  group_by(parentTerm, source) %>%
+  summarise(size = sum(size), .groups = 'drop')
+## export reduced mid male terms
+write.csv(reducedTerms_termM, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/raw_data/reducedTerms_termM_sexSpecific.csv"))
+
+# male plot 
+reducedTerms_termM %>%
+  mutate(parentTerm = fct_reorder(parentTerm, desc(size))) %>%
+  ggplot( aes(x=parentTerm, y=size, fill = source)) +
+  geom_bar(stat="identity", alpha=.8, width=.7) +
+  coord_flip() +
+  labs(x = "GO Term", y = "Number of Associations", fill = "Source") +
+  theme_bw() +
+  theme(text = element_text(size = 10, family = "Times New Roman"),
+        axis.text = element_text(color = "black"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 10),
+        axis.title.x = element_blank(),
+        legend.text = element_text(size = 10)) +
+  scale_y_continuous(expand = c(0, 300)) +
+  scale_fill_manual(values = c("#9ECAE1", "#E41A1C", "#B8E186")) 
+ggsave("termM_fetalSex_go_bar.png", width = 7, height = 7, units = "in")
+
+# prepare df for dot plot
+reducedTerms_termM <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/raw_data/reducedTerms_termM_sexSpecific.csv"),
+                                col_names = TRUE,
+                                delim = ",") %>% 
+  dplyr::select(., -...1)
+reducedTerms_termM$tissue <- "Term Placenta (Male)"
+
+# create a dot plot
+reducedTerms_termM %>%
+  ggplot( aes(x=tissue, y=parentTerm, color = source, size = size)) +
+  geom_point(stat="identity", show.legend = TRUE) +
+  labs(x = "Tissue", y = "Parent GO Term", color = "Source", size = "Number of Associations") +
+  theme_bw() +
+  theme(text = element_text(size = 10, family = "Times New Roman"),
+        axis.text = element_text(color = "black"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(size = 10),
+        axis.title.x = element_blank(),
+        legend.text = element_text(size = 10)) +
+  scale_color_manual(values = c("#9ECAE1", "#E41A1C", "#B8E186"))
+ggsave("termM_go_point.png", width = 7, height = 7, units = "in")
+```
+
+# GO point plot of all sex-specific datasets 
+```{r}
+reducedTerms_termF <- read_delim("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/raw_data/reducedTerms_termF_sexSpecific.csv",
+                                 col_names = TRUE,
+                                 delim = ",") %>% 
+  dplyr::select(., -...1)
+reducedTerms_termF$tissue <- "Term Placenta (Female)"
+
+reducedTerms_termM <- read_delim("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/raw_data/reducedTerms_termM_sexSpecific.csv",
+                                 col_names = TRUE,
+                                 delim = ",") %>% 
+  dplyr::select(., -...1)
+reducedTerms_termM$tissue <- "Term Placenta (Male)"
+
+reducedTerms_midF <- read_delim(file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/enrichmentAnalysis_fetal.Rproj/raw_data/midF_sexspecific.csv"),
+                                col_names = TRUE, 
+                                delim = ",") %>% 
+  dplyr::select(., -...1)
+reducedTerms_midF$tissue <- "Mid-gestation Placenta (Female)"
+reducedTerms_midF$source <- "MF"
+reducedTerms_midF <- dplyr::select(reducedTerms_midF, parentTerm, size, source, tissue)
+
+# rbind results
+reducedTerms_combined <- rbind(reducedTerms_termF, reducedTerms_termM) %>% 
+  rbind(., reducedTerms_midF) %>%
+  group_by(., parentTerm, source, tissue) %>%
+  summarise(., size = sum(size), .groups = 'drop')
+
+# create dot plot
+
+# create a dot plot
+reducedTerms_combined %>%
+  ggplot( aes(x=tissue, y=parentTerm, color = source, size = size)) +
+  geom_point(stat="identity", show.legend = TRUE) +
+  labs(x = "Tissue", y = "Parent GO Term", color = "Source", size = "Number of Associations") +
+  theme_bw() +
+  theme(text = element_text(size = 10)) +
+  scale_color_manual(values = c("#9ECAE1", "#E41A1C", "#B8E186"))
+ggsave("sexspecific_go_point.png", width = 8.5, height = 8.5, units = "in")
+```
+
+

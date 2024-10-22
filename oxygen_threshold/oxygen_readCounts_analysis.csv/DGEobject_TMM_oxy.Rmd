@@ -28,7 +28,7 @@ import_early_placentaM <- file.path(projectDir, "rawCounts_placentaM_early.csv")
 import__mid_placentaF <- file.path(projectDir, "rawCounts_placenta_f.csv")
 import_mid_placentaM <- file.path(projectDir, "rawCounts_placenta_m.csv")
 import_metaData_placenta <- file.path(projectDir, "metaData_placenta.csv")
-input_genome_gff3_file <- file.path(projectDir, "gencode.v29.chr_patch_hapl_scaff.annotation.gff3")
+input_genome_gff3_file <- file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/rawData/gencode.v29.chr_patch_hapl_scaff.annotation.gff3")
 ```
 
 # import raw counts
@@ -199,6 +199,11 @@ mean_male_cpms <- subset(mean_sex_tissue_cpms, startsWith(sex_tissue, "male_"))
 write.csv(mean_male_cpms, file = file.path(projectDir, "mean_male_cpms_oxy_TMM.csv"))
 ```
 
+# export for heatmap visualisation
+```{r}
+write.csv(mean_sex_tissue_cpms, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/tissue_depletion/rawData/mean_mid_and_early_ncpms_TMM")) 
+```
+
 # subset for mid_placenta and export df
 ```{r}
 # select for rows ending in "_mid"
@@ -206,5 +211,3 @@ mean_placenta_cpms <- subset(mean_sex_tissue_cpms, endsWith(sex_tissue, "_mid"))
 # export data
 write.csv(mean_placenta_cpms, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/sexSpecific_comparison/rawData/mean_placenta_cpms_TMM.csv"))
 ```
-
-
