@@ -1,8 +1,0 @@
-"0","# pre-plot process"
-"0","dge_unnorm <- dge_object"
-"0","dge_norm <- dge_object_TMM"
-"0",""
-"0","# box plot of unnormalised expression distribution "
-"0","par(mfrow=c(1,2))"
-"0","lcpm_unnorm <- cpm(dge_unnorm, log=TRUE)"
-"0","boxplot(lcpm_unnorm, ylab=""Log-cpm"", las=2, col=blues9, main=""Unnormalised data"")"

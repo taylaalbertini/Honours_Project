@@ -1,2 +1,0 @@
-"0","lcpm_norm <- cpm(dge_norm, log=TRUE)"
-"0","boxplot(lcpm_norm, ylab=""Log-cpm"", las=2, col=blues9, main=""Normalised data"")"
