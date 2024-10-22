@@ -1,0 +1,386 @@
+---
+title: "DGEobject_TMM"
+output: html_document
+date: "2024-05-01"
+---
+
+# load libraries and set project directory 
+```{r}
+library(plyr)
+library(reshape2)
+library(dplyr)
+library(stringr)
+library(readxl)
+library(readr)
+library(magrittr)
+library(ggplot2)
+library(edgeR)
+library(limma)
+library(Glimma)
+library(RColorBrewer)
+
+# set project directory
+projectDir <- "/Users/taylaalbertini/Desktop/R studio/honours_project/fetal_comparison/readCounts_analysis/rawData"
+
+# set path for data tables 
+import_brain_f <- file.path(projectDir, "rawCounts_brain_f.csv")
+import_brain_m <- file.path(projectDir, "rawCounts_brain_m.csv")
+import_heart_f <- file.path(projectDir, "rawCounts_heart_f.csv")
+import_heart_m <- file.path(projectDir, "rawCounts_heart_m.csv")
+import_liver_f <- file.path(projectDir, "rawCounts_liver_f.csv")
+import_liver_m <- file.path(projectDir, "rawCounts_liver_m.csv")
+import_lung_f <- file.path(projectDir, "rawCounts_lung_f.csv")
+import_lung_m <- file.path(projectDir, "rawCounts_lung_m.csv")
+import_muscle_f <- file.path(projectDir, "rawCounts_muscle_f.csv")
+import_muscle_m <- file.path(projectDir, "rawCounts_muscle_m.csv")
+import_placenta_f <- file.path(projectDir, "rawCounts_placenta_f.csv")
+import_placenta_m <- file.path(projectDir, "rawCounts_placenta_m.csv")
+import_metaData <- file.path(projectDir, "metaData.csv")
+input_genome_gff3_file <- file.path(projectDir, "gencode.v29.chr_patch_hapl_scaff.annotation.gff3")
+```
+
+# import raw counts
+```{r}
+# import the counts tables
+## brainF
+brainF <- read_delim(file = import_brain_f,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## brainM
+brainM <- read_delim(file = import_brain_m,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## heartF
+heartF <- read_delim(file = import_heart_f,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## heartM
+heartM <- read_delim(file = import_heart_m,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## liverF
+liverF <- read_delim(file = import_liver_f,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## liverM
+liverM <- read_delim(file = import_liver_m,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## lungF
+lungF <- read_delim(file = import_lung_f,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## lungM
+lungM <- read_delim(file = import_lung_m,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## muscleF
+muscleF <- read_delim(file = import_muscle_f,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+#v muscleaM
+muscleM <- read_delim(file = import_muscle_m,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## placentaF
+placentaF <- read_delim(file = import_placenta_f,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+## placentaM
+placentaM <- read_delim(file = import_placenta_m,
+                     col_names = TRUE,
+                     delim = ",") %>%
+  dplyr::select(., ensembl = ...1, everything()) %>%
+  as.data.frame()
+
+# import metaData table 
+metaData <- read_delim(file = import_metaData,
+                       col_names = TRUE,
+                       delim = ",") %>%
+  as.data.frame()
+```
+
+# export male and female mid-gestation samples into term vs mid gestation comparison rawData directory for term 'depletion' analysis 
+```{r}
+# export female mid-gestation placenta counts table 
+write.csv(placentaF, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/termPlacenta_comparison/rawData/rawCounts_placentaF_mid.csv"))
+
+# export male mid-gestation placenta counts table 
+write.csv(placentaM, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/termPlacenta_comparison/rawData/rawCounts_placentaM_mid.csv"))
+```
+
+# import gencode
+```{r}
+# import the gencodev32_gff_inFile file
+all_gencode_v29 <- rtracklayer::import(input_genome_gff3_file)
+# this file contains more information than we need here
+# subset out only the columns we need
+gene_data <- data.frame(ensembl_gene_id = all_gencode_v29@elementMetadata$gene_id,
+                        hgnc_symbol = all_gencode_v29@elementMetadata$gene_name,
+                        seqnames = all_gencode_v29@seqnames,
+                        gene_type = all_gencode_v29@elementMetadata$gene_type)
+# we're left with multiple identical rows, keep one each
+gencode_v29_gene_id_symbol_chr_biotype <- gene_data %>%
+  dplyr::distinct(., .keep_all = TRUE)
+# which leaves us with the following dimensions where there is a unique combination of ensembl ID, hgnc symbol and chromosome
+dim(gencode_v29_gene_id_symbol_chr_biotype) # 64837 3
+# this does however, leave us with duplicate ensembl IDs
+dim(gencode_v29_gene_id_symbol_chr_biotype[!duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl_gene_id), ]) # 64792 3
+# after generating a table to see the duplicates I can see that this is an X/Y chromosome issue. All genes are assigned to both chromosomes
+duplicate_rows <- gencode_v29_gene_id_symbol_chr_biotype[duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl_gene_id) | duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl_gene_id, fromLast = TRUE),]
+# remove duplicates (we don't use the chromosome information for anything)
+gencode <- gencode_v29_gene_id_symbol_chr_biotype[!duplicated(gencode_v29_gene_id_symbol_chr_biotype$ensembl_gene_id), ]
+```
+
+# merge countTables using dplyr full join
+```{r}
+# merge countsTables to create total rawCounts df
+total_rawCounts <- dplyr::full_join(brainF, brainM, by = "ensembl") %>%
+  dplyr::full_join(.,heartF, by = "ensembl") %>%
+  dplyr::full_join(.,heartM, by = "ensembl") %>%
+  dplyr::full_join(.,liverF, by = "ensembl") %>%
+  dplyr::full_join(.,liverM, by = "ensembl") %>%
+  dplyr::full_join(.,lungF, by = "ensembl") %>%
+  dplyr::full_join(.,lungM, by = "ensembl") %>%
+  dplyr::full_join(.,muscleF, by = "ensembl") %>%
+  dplyr::full_join(.,muscleM, by = "ensembl") %>%
+  dplyr::full_join(.,placentaF, by = "ensembl") %>%
+  dplyr::full_join(.,placentaM, by = "ensembl") %>%
+  tibble::column_to_rownames("ensembl")
+
+# export rawcounts table to libsize plot directory for heatmap 
+write.csv(total_rawCounts, file = file.path("/Users/taylaalbertini/Desktop/R studio/honours_project/libsize/fetal_rawcounts.csv"))
+
+# replace any NA values with zero
+total_rawCounts[is.na(total_rawCounts)] <- 0
+
+# subset gencode to only include protein coding genes
+gencode_protein <- dplyr::filter(gencode, gene_type == "protein_coding")
+
+# subset total rawCounts to only include protein coding genes
+rawCounts_protein <- subset(total_rawCounts, rownames(total_rawCounts) %in% gencode_protein$ensembl)
+```
+
+# remove scattered samples (post normalisation)
+```{r}
+# remove SRR3191758 and SRR3191757
+rawCounts_protein <- rawCounts_protein[,-101]
+rawCounts_protein <- rawCounts_protein[,-98]
+```
+
+# correct for batch effect
+```{r}
+# need to correct for batch effects before the counts are incorporated into the DGEobject
+rawCounts_protein <- limma::removeBatchEffect(rawCounts_protein)
+```
+
+# creating DGEobject
+```{r}
+# create DGFElist object 
+dgeobject_TMM <- edgeR::DGEList(
+  counts = rawCounts_protein,
+  samples = metaData,
+  group = metaData$tissue,
+  genes = rownames(rawCounts_protein))
+```
+
+# normalisation - TMM and cpm
+```{r}
+# TMM normalisation 
+dgeobject_TMM <- calcNormFactors(dgeobject_TMM,
+                                  method = "TMM")
+
+# view library size post TMM normalisation 
+summary(dgeobject_TMM$samples$lib.size)
+```
+
+# sanity plots for expected gene expression in concordance with gene ranking results 
+```{r}
+# create a data frame with information for the plot
+sex_lcpm <- edgeR::cpm(dge_object_TMM, log = TRUE)
+
+# female
+## convert row names into a column
+genes_to_plotF <- t(sex_lcpm) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column(., "sampleID") 
+## keep only the top 4 of depleted genes
+plotF_depleted <- genes_to_plotF[, c("sampleID", "ENSG00000114200.9", "ENSG00000133878.8", "ENSG00000184226.14", "ENSG00000206432.4")]
+## left join the tissue and sex on by dplyr::left_join
+plotF_depleted_2 <- dplyr::left_join(plotF_depleted, dge_object_TMM$samples[, c("sampleID", "tissue")], by = join_by(sampleID))
+## add a column and group by sex_tissue
+plotF_depleted_3 <- dplyr::mutate(plotF_depleted_2, sex_tissue = paste(sex, tissue, sep = "_")) %>%
+  # group by the column of interest. Here I've use the "sex_outcome" column but in your data it will be the "tissue" column
+  group_by(sex_tissue)
+## remove tissue and sex columns
+plotF_depleted_3 <- dplyr::select(plotF_depleted_3, -c(tissue, sex))
+## select for only female_tissue samples
+plotF_depleted_3 <- subset(plotF_depleted_3, startsWith(sex_tissue, "female_")) 
+
+# reorder the columns to be plotted
+new_order <- c("sampleID", "sex_tissue", "ENSG00000114200.9", "ENSG00000133878.8", "ENSG00000184226.14", "ENSG00000206432.4")
+# Reorder columns dynamically
+plotF_depleted_3 <- plotF_depleted_3[, new_order]
+
+
+# plot the data using ggplot and loop it through each of the genes
+for (i in 3:ncol(plotF_depleted_3)) {
+  column_name <- colnames(plotF_depleted_3)[i]
+  print(
+    ggplot(plotF_depleted_3, aes(x=sex_tissue, 
+                                 y=plotF_depleted_3[[i]])) +
+          geom_boxplot() +
+          geom_jitter(color="black", size=0.4, alpha=0.9) +
+          
+          ggtitle(column_name) +
+          theme_bw(base_size=16) +
+          labs(subtitle="Female depleted gene log2 cpms",
+               x="female tissues",
+               y="sample log cpms") +
+    
+    theme(axis.text.x=element_text(angle=270,
+                                 colour="black",
+                                 size=10),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14)))
+}
+
+# male 
+## convert rownames into a column
+genes_to_plotM <- t(sex_lcpm) %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column(., "sampleID") 
+## keep only the top 4 of depleted genes
+plotM_depleted <- genes_to_plotM[, c("sampleID", "ENSG00000164161.9", "ENSG00000184226.14", "ENSG00000189056.13", "ENSG00000139910.19")]
+## left join the tissue and sex on by dplyr::left_join
+plotM_depleted_2 <- dplyr::left_join(plotM_depleted, dge_object_TMM$samples[, c("sampleID", "tissue", "sex")], by = join_by(sampleID))
+## add a column and group by sex_tissue
+plotM_depleted_3 <- dplyr::mutate(plotM_depleted_2, sex_tissue = paste(sex, tissue, sep = "_")) %>%
+  # group by the column of interest. Here I've use the "sex_outcome" column but in your data it will be the "tissue" column
+  group_by(sex_tissue)
+## remove tissue and sex columns
+plotM_depleted_3 <- dplyr::select(plotM_depleted_3, -c(tissue, sex))
+## select for only female_tissue samples
+plotM_depleted_3 <- subset(plotM_depleted_3, startsWith(sex_tissue, "male_")) 
+
+# reorder the columns to be plotted
+new_order <- c("sampleID", "sex_tissue", "ENSG00000164161.9", "ENSG00000184226.14", "ENSG00000189056.13", "ENSG00000139910.19")
+# Reorder columns dynamically
+plotM_depleted_3 <- plotM_depleted_3[, new_order]
+
+
+# plot the data using ggplot and loop it through each of the genes
+for (i in 3:ncol(plotM_depleted_3)) {
+  column_nameM <- colnames(plotM_depleted_3)[i]
+  print(
+    ggplot(plotM_depleted_3, aes(x=sex_tissue, 
+                                 y=plotM_depleted_3[[i]])) +
+          geom_boxplot() +
+          geom_jitter(color="black", size=0.4, alpha=0.9) +
+          
+          ggtitle(column_nameM) +
+          theme_bw(base_size=16) +
+          labs(subtitle="Male depleted gene log2 cpms",
+               x="male tissues",
+               y="sample log cpms") +
+    
+    theme(axis.text.x=element_text(angle=270,
+                                 colour="black",
+                                 size=10),
+
+        axis.text.y = element_text(angle=0,
+                                   colour="black",
+                                   size=14)))
+}
+```
+
+# normalised vs unnormalised box plots
+```{r}
+# pre-plot process
+dge_unnorm <- dge_object
+dge_norm <- dge_object_TMM
+
+# box plot of unnormalised expression distribution 
+par(mfrow=c(1,2))
+lcpm_unnorm <- cpm(dge_unnorm, log=TRUE)
+boxplot(lcpm_unnorm, ylab="Log-cpm", las=2, col=blues9, main="Unnormalised data")
+
+# box plot of normalised expression distribution 
+par(mfrow=c(1,2))
+lcpm_norm <- cpm(dge_norm, log=TRUE)
+boxplot(lcpm_norm, ylab="Log-cpm", las=2, col=blues9, main="Normalised data")
+```
+
+# cpm avergage by sex_tissue 
+```{r}
+# use the edgeR built in function `cpm()` to make a new table of cpm counts
+cpms_sex <- edgeR::cpm(dgeobject_TMM, log = FALSE)
+# use the cpms dataframe to grab all the ensembl IDs for the genes
+genes_to_average <- rownames(cpms_sex)
+# create a new object for the mean cpms
+# first step is to transform the matrix (flip it 90' so genes are now in the columns and samples are in the rows)
+mean_sex_tissue_cpms <- t(cpms_sex) %>%
+  # make sure you have a data frame
+  data.frame() %>%
+  # move the samplenames into a column (we need this to join the metadata table)
+  tibble::rownames_to_column("sampleID") %>%
+  # join the counts and the metadata table (but we only want the samplename and tissue columns for your data so we're subsetting using the square brackets)
+  dplyr::left_join(., dgeobject_TMM$samples[, c("sampleID", "tissue", "sex")], by = join_by(sampleID)) %>%
+  # drop the samplename column again (it was added by the join)
+  dplyr::select(., -sampleID) %>%
+   # add a column
+  dplyr::mutate(sex_tissue = paste(sex, tissue, sep = "_")) %>%
+  # group by the column of interest. Here I've use the "sex_outcome" column but in your data it will be the "tissue" column
+  group_by(sex_tissue) %>%
+  # calculate the mean cpms of all genes (using the ensembl gene vector we made earlier)
+  dplyr::summarise_at(vars(genes_to_average), mean)
+```
+
+# subset sex_tissue into female and male dataframes
+```{r}
+# subset female df 
+mean_female_cpms <- subset(mean_sex_tissue_cpms, startsWith(sex_tissue, "female_")) 
+## export female TMM normalised cpm table 
+write.csv(mean_female_cpms, file = file.path(projectDir, "mean_female_cpms_TMM.csv"))
+
+# subset male df
+mean_male_cpms <- subset(mean_sex_tissue_cpms, startsWith(sex_tissue, "male_"))
+## export male TMM normalised cpm table
+write.csv(mean_male_cpms, file = file.path(projectDir, "mean_male_cpms_TMM.csv"))
+```
+
