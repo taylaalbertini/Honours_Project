@@ -1,6 +1,6 @@
 The following Git repo contains all code needed to reproduce the gene depletion comparative analyses, outputs and visualisations from the honours thesis _Sex-specific transcript depletion in the placenta: A comparative analysis across gestation and fetal tissues_. 
 
-**Abstract **
+**Abstract**
 The placenta, the first organ formed during mammalian development, plays a critical role in the feto-maternal interface and pregnancy success. Proper placental function is essential for normal fetal development, with dysfunction linked to pregnancy complications affecting both immediate and long-term health of mother and her offspring. However, the mechanisms of placental dysfunction are not fully understood. 
 
 Tissue-specific gene expression analysis can reveal unique characteristics essential for the placenta's structure and function, though most studies focus on identifying transcripts that are abundant in the placenta compared to other tissues. In contrast, we aimed to investigate the presence of depleted transcripts in the placenta when compared to other fetal tissues, with a focus on sex-specific differences. In addition, we aimed to compare placental gene expression across different gestational stages to explore the variation in depleted transcripts throughout pregnancy. We obtained a total of 356 RNA-sequencing datasets, 126 of which being fetal brain, heart, liver lung and muscle were obtained from the Sequence Read Archive. A further 75 mid-, 33, early- and 56 term-gestation samples were previously sequences within our laboratory. 
