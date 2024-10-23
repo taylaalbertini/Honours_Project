@@ -1,5 +1,6 @@
 The following Git repo contains all code needed to reproduce the gene depletion comparative analyses, outputs and visualisations from the honours thesis _Sex-specific transcript depletion in the placenta: A comparative analysis across gestation and fetal tissues_. 
 
+
 **Abstract**
 
 The placenta, the first organ formed during mammalian development, plays a critical role in the feto-maternal interface and pregnancy success. Proper placental function is essential for normal fetal development, with dysfunction linked to pregnancy complications affecting both immediate and long-term health of mother and her offspring. However, the mechanisms of placental dysfunction are not fully understood. 
